@@ -127,40 +127,40 @@ export const CostUsageScreen: React.FC = () => {
               </BarChart>
             </ChartContainer>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Model Usage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-6">
-                {kpi.model_costs.map((model, index) => (
-                  <ChartContainer
-                    key={index}
-                    config={{
-                      tokens: {
-                        label: model.llm_model_name,
-                      },
-                    }}
-                  >
-                    <h3 className="text-lg font-semibold mb-4">
-                      {model.llm_model_name}
-                    </h3>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={model.daily_costs}>
-                        <XAxis dataKey="date" />
-                        <YAxis yAxisId="left" orientation="left" />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar yAxisId="left" dataKey="cost" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            <h3>Model Usage</h3>
+            <div className="grid grid-cols-2 gap-6">
+              {kpi.model_costs.map((model, index) => (
+                <ChartContainer
+                  key={index}
+                  config={{
+                    tokens: {
+                      label: model.llm_model_name,
+                    },
+                  }}
+                >
+                  <h3 className="text-lg font-semibold mb-4">
+                    {model.llm_model_name}
+                  </h3>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={model.daily_costs}>
+                      <XAxis dataKey="date" />
+                      <YAxis yAxisId="left" orientation="left" />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="cost"
+                        fill={`hsl(var(--chart-1))`}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="w-[30%] space-y-6">
-          <Card>
+          <div>
             <CardHeader>
               <CardTitle>Monthly Bill</CardTitle>
               <CardDescription>Oct 1 - 31</CardDescription>
@@ -173,8 +173,8 @@ export const CostUsageScreen: React.FC = () => {
               </div>
               <Button className="w-full">Increase limit</Button>
             </CardContent>
-          </Card>
-          <Card>
+          </div>
+          <div>
             <CardHeader>
               <CardTitle>Income from Usage Overhead</CardTitle>
             </CardHeader>
@@ -186,8 +186,8 @@ export const CostUsageScreen: React.FC = () => {
                 Total income from usage fees
               </div>
             </CardContent>
-          </Card>
-          <Card>
+          </div>
+          <div>
             <CardHeader>
               <CardTitle>Most Used Models</CardTitle>
             </CardHeader>
@@ -215,7 +215,7 @@ export const CostUsageScreen: React.FC = () => {
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
     </>

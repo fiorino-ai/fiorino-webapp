@@ -259,6 +259,7 @@ export default function Component() {
                     config={{
                       amount: {
                         label: "Amount",
+                        color: "hsl(var(--chart-1))",
                       },
                     }}
                   >
@@ -271,7 +272,7 @@ export default function Component() {
                           <Bar
                             key={index}
                             dataKey={model}
-                            fill={`hsl(var(--chart-${index + 1}))`}
+                            fill={`hsl(${index * 30}, 70%, 50%)`}
                             stackId="daily-cost"
                           />
                         ))}
