@@ -7,6 +7,7 @@ import { LoginScreen } from "./LoginScreen";
 import ProtectedRoute from "@/components/custom/ProtectedRoute";
 import { useAuthStore } from "@/stores/SessionStore";
 import { useEffect } from "react";
+import Loading from "@/components/custom/Loading";
 
 const RedirectToMainPage: React.FC = () => {
   return <Navigate to={`/realms/usage`} />;
@@ -23,36 +24,35 @@ export const Navigation: React.FC = () => {
     verifyToken();
   }, [verifyToken]);
 
+  console.log(verifyingToken, user);
+
   if (verifyingToken) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
-  if (!user) {
-    return (
+  // if (!user) {
+  //   return (
+  //     <Routes>
+
+  //       <Route path="*" element={<Navigate to="/auth/login" />} />
+  //     </Routes>
+  //   );
+  // }
+
+  return (
+    <div>
       <Routes>
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="/auth" element={<RedirectToLoginPage />} />
           <Route path="/auth/login" element={<LoginScreen />} />
         </Route>
-        <Route path="*" element={<Navigate to="/auth/login" />} />
-      </Routes>
-    );
-  }
-
-  return (
-    <div>
-      <Routes>
-        <Route path="*" element={<Navigate to="/realms" />} />
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute user={user} />}>
           <Route path="/realms" element={<MainLayout />}>
-            <Route path="/realms" element={<RedirectToMainPage />} />
-            <Route path="/realms/usage" element={<CostUsageScreen />} />
-            <Route
-              path="/realms/usage/activity"
-              element={<ActivityUsageScreen />}
-            />
+            <Route path="usage" element={<CostUsageScreen />} />
+            <Route path="usage/activity" element={<ActivityUsageScreen />} />
           </Route>
         </Route>
+        {/* <Route path="*" element={<Navigate to="/realms" />} /> */}
       </Routes>
     </div>
   );

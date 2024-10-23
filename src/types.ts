@@ -8,3 +8,16 @@ export interface LoginResponse {
   token_type: string;
   user: User;
 }
+
+export interface Realm {
+  id: string;
+  name: string;
+}
+
+export interface RealmCostKPI {
+  [key: string]: any;
+}
+
+export interface RealmActivityKPI {
+  [key: string]: any;
+}
