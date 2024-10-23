@@ -7,10 +7,12 @@ interface SessionState {
   loginLoading: boolean;
   signupLoading: boolean;
   error: string | null;
+  verifyingToken: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  verifyToken: () => Promise<void>;
 }
 
 export const useAuthStore = create<SessionState>((set) => ({
@@ -18,6 +20,7 @@ export const useAuthStore = create<SessionState>((set) => ({
   loginLoading: false,
   signupLoading: false,
   error: null,
+  verifyingToken: false,
   login: async (email, password) => {
     set({ loginLoading: true, error: null });
     try {
@@ -53,6 +56,24 @@ export const useAuthStore = create<SessionState>((set) => ({
     set({ user: null, error: null });
   },
   clearError: () => set({ error: null }),
+  verifyToken: async () => {
+    const token = sessionStorage.getItem("access_token");
+    if (!token) {
+      set({ user: null });
+      return;
+    }
+    set({ verifyingToken: true });
+    try {
+      const response = await axios.get<User>("/auth/me");
+      set({ user: response.data });
+    } catch (error) {
+      sessionStorage.removeItem("access_token");
+      set({ user: null, error: "Session expired. Please log in again." });
+      console.error("Token verification failed", error);
+    } finally {
+      set({ verifyingToken: false });
+    }
+  },
 }));
 
 const fakeApiSignup = (email: string, password: string): Promise<User> => {
