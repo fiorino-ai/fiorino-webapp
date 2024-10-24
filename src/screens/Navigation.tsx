@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import Loading from "@/components/custom/Loading";
 import AuthRoute from "@/components/custom/AuthRoute";
 import { ApiKeysScreen } from "./ApiKeysScreen";
+import { SettingsScreen } from "./SettingsScreen";
 import { useShallow } from "zustand/react/shallow";
 
 const RedirectToMainPage: React.FC = () => {
@@ -53,6 +54,7 @@ export const Navigation: React.FC = () => {
             <Route path="usage" element={<CostUsageScreen />} />
             <Route path="usage/activity" element={<ActivityUsageScreen />} />
             <Route path="api-keys" element={<ApiKeysScreen />} />
+            <Route path="settings" element={<SettingsScreen />} />
           </Route>
         </Route>
         {/* <Route path="*" element={<Navigate to="/realms" />} /> */}

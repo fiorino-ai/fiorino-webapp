@@ -25,6 +25,7 @@ import {
 import {
   BarChart2,
   ChevronsUpDown,
+  Cog,
   Lock,
   LogOut,
   PanelLeft,
@@ -199,6 +200,14 @@ export const MainLayout: React.FC = () => {
                   <Link to={"api-keys"}>
                     <Lock />
                     <span>API keys</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"settings"}>
+                    <Cog />
+                    <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -12,6 +12,8 @@ export interface LoginResponse {
 export interface Realm {
   id: string;
   name: string;
+  bill_limit_enabled: boolean;
+  overhead_enabled: boolean;
 }
 
 export interface RealmCostKPI {

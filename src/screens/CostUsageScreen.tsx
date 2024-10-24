@@ -23,7 +23,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRealmDataStore } from "@/stores/RealmDataStore";
 import { useRealmsStore } from "@/stores/RealmStore";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar } from "recharts";
 
@@ -169,33 +169,39 @@ export const CostUsageScreen: React.FC = () => {
             </div>
           </div>
           <div className="w-[30%] space-y-6">
-            <div>
-              <CardHeader>
-                <CardTitle>Monthly Bill</CardTitle>
-                <CardDescription>Oct 1 - 31</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold mb-2">${kpi.total_cost}</div>
-                <Progress value={2} className="h-2 mb-2" />
-                <div className="text-sm text-gray-400 mb-4">
-                  ${kpi.total_cost} / $50.00 limit
-                </div>
-                <Button className="w-full">Increase limit</Button>
-              </CardContent>
-            </div>
-            <div>
-              <CardHeader>
-                <CardTitle>Income from Usage Overhead</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold mb-2">
-                  ${kpi.total_usage_fees}
-                </div>
-                <div className="text-sm text-gray-400">
-                  Total income from usage fees
-                </div>
-              </CardContent>
-            </div>
+            {activeRealm?.bill_limit_enabled && (
+              <div>
+                <CardHeader>
+                  <CardTitle>Monthly Bill</CardTitle>
+                  <CardDescription>Oct 1 - 31</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold mb-2">
+                    ${kpi.total_cost}
+                  </div>
+                  <Progress value={2} className="h-2 mb-2" />
+                  <div className="text-sm text-gray-400 mb-4">
+                    ${kpi.total_cost} / $50.00 limit
+                  </div>
+                  <Button className="w-full">Increase limit</Button>
+                </CardContent>
+              </div>
+            )}
+            {activeRealm?.overhead_enabled && (
+              <div>
+                <CardHeader>
+                  <CardTitle>Income from Usage Overhead</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold mb-2">
+                    ${kpi.total_usage_fees}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Total income from usage fees
+                  </div>
+                </CardContent>
+              </div>
+            )}
             <div>
               <CardHeader>
                 <CardTitle>Most Used Models</CardTitle>
