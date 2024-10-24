@@ -31,7 +31,7 @@ import {
   Plus,
   Webhook,
 } from "lucide-react";
-import { memo, useEffect } from "react";
+import { useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import Loading from "@/components/custom/Loading";
@@ -39,6 +39,9 @@ import { SessionState, useAuthStore } from "@/stores/SessionStore";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { useShallow } from "zustand/react/shallow";
+import { useState } from "react";
+import { AddRealmDialog } from "@/components/custom/AddRealmDialog";
+import { Realm } from "@/types";
 
 const sessionSelector = (state: SessionState) => ({
   user: state.user,
@@ -51,13 +54,15 @@ const realmsSelector = (state: RealmsState) => ({
   loading: state.loading,
   activeRealm: state.activeRealm,
   setActiveRealm: state.setActiveRealm,
+  createRealm: state.createRealm,
+  submitting: state.submitting,
 });
 
 const realmDataSelector = (state: RealmDataState) => ({
   reset: state.reset,
 });
 
-const MemoizedOutlet = memo(Outlet);
+// const MemoizedOutlet = memo(Outlet);
 
 export const MainLayout: React.FC = () => {
   const location = useLocation();
@@ -67,9 +72,12 @@ export const MainLayout: React.FC = () => {
     loading: realmsLoading,
     activeRealm,
     setActiveRealm,
+    createRealm,
+    submitting,
   } = useRealmsStore(useShallow(realmsSelector));
   const { user, logout } = useAuthStore(useShallow(sessionSelector));
   const { reset } = useRealmDataStore(useShallow(realmDataSelector));
+  const [isAddRealmDialogOpen, setIsAddRealmDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchAndSetRealms = async () => {
@@ -88,6 +96,19 @@ export const MainLayout: React.FC = () => {
       reset();
     }
   }, [activeRealm]);
+
+  const handleAddRealm = async (values: Pick<Realm, "name">) => {
+    try {
+      const newRealm = await createRealm(values);
+      if (newRealm) {
+        setIsAddRealmDialogOpen(false);
+        setActiveRealm(newRealm);
+      }
+    } catch (error) {
+      console.error("Failed to create realm", error);
+      // Optionally, you can show an error message to the user
+    }
+  };
 
   if (realmsLoading) {
     return <Loading />;
@@ -142,7 +163,10 @@ export const MainLayout: React.FC = () => {
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 p-2">
+                  <DropdownMenuItem
+                    className="gap-2 p-2"
+                    onClick={() => setIsAddRealmDialogOpen(true)}
+                  >
                     <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                       <Plus className="size-4" />
                     </div>
@@ -262,6 +286,12 @@ export const MainLayout: React.FC = () => {
           </AnimatePresence>
         </main>
       </SidebarInset>
+      <AddRealmDialog
+        open={isAddRealmDialogOpen}
+        submitting={submitting}
+        onOpenChange={setIsAddRealmDialogOpen}
+        onSubmit={handleAddRealm}
+      />
     </SidebarProvider>
   );
 
