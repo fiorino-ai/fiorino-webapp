@@ -48,6 +48,7 @@ export const Navigation: React.FC = () => {
         </Route>
         <Route element={<ProtectedRoute user={user} />}>
           <Route path="/realms" element={<MainLayout />}>
+            <Route index element={<RedirectToMainPage />} />
             <Route path="usage" element={<CostUsageScreen />} />
             <Route path="usage/activity" element={<ActivityUsageScreen />} />
           </Route>
