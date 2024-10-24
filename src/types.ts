@@ -35,3 +35,17 @@ export interface ApiKey {
 
 export type NewApiKey = Pick<ApiKey, "name">;
 export type EditedApiKey = Pick<ApiKey, "name" | "is_disabled">;
+
+export interface BillLimit {
+  id?: string; // Add this if the API returns an id
+  valid_from: string;
+  valid_to: string;
+  amount: number;
+}
+
+export interface Overhead {
+  id?: string;
+  valid_from: string;
+  valid_to: string;
+  amount: number;
+}

@@ -6,12 +6,15 @@ import {
   NewApiKey,
   RealmActivityKPI,
   RealmCostKPI,
+  BillLimit,
+  Overhead,
 } from "@/types";
 
 export interface RealmDataState {
   costKPI: RealmCostKPI | null;
   activityKPI: RealmActivityKPI | null;
   apiKeys: ApiKey[];
+  billLimits: BillLimit[];
   loading: boolean;
   submitting: boolean;
   error: string | null;
@@ -26,16 +29,38 @@ export interface RealmDataState {
     data: EditedApiKey
   ) => Promise<void>;
   deleteApiKey: (realmId: string, apiKeyId: string) => Promise<void>;
+  fetchBillLimits: (realmId: string) => Promise<void>;
+  createBillLimit: (
+    realmId: string,
+    data: BillLimit
+  ) => Promise<BillLimit | null>;
+  updateBillLimit: (
+    realmId: string,
+    billLimitId: string,
+    data: Partial<BillLimit>
+  ) => Promise<void>;
+  deleteBillLimit: (realmId: string, billLimitId: string) => Promise<void>;
+  overheads: Overhead[];
+  fetchOverheads: (realmId: string) => Promise<void>;
+  createOverhead: (realmId: string, data: Overhead) => Promise<Overhead | null>;
+  updateOverhead: (
+    realmId: string,
+    overheadId: string,
+    data: Partial<Overhead>
+  ) => Promise<void>;
+  deleteOverhead: (realmId: string, overheadId: string) => Promise<void>;
 }
 
 export const useRealmDataStore = create<RealmDataState>((set) => ({
   costKPI: null,
   activityKPI: null,
   apiKeys: [],
+  billLimits: [],
   loading: false,
   submitting: false,
   error: null,
-  reset: () => set({ costKPI: null, activityKPI: null, apiKeys: [] }),
+  reset: () =>
+    set({ costKPI: null, activityKPI: null, apiKeys: [], billLimits: [] }),
   fetchCostKPI: async (realmId: string) => {
     set({ loading: true, error: null });
     try {
@@ -129,6 +154,149 @@ export const useRealmDataStore = create<RealmDataState>((set) => ({
       console.error("Deleting API key failed", error);
     } finally {
       set({ loading: false });
+    }
+  },
+  fetchBillLimits: async (realmId: string) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await axios.get<BillLimit[]>(
+        `/realms/${realmId}/bill-limits`
+      );
+      set({ billLimits: response.data });
+    } catch (error) {
+      set({ error: "Failed to fetch bill limits. Please try again." });
+      console.error("Fetching bill limits failed", error);
+    } finally {
+      set({ loading: false });
+    }
+  },
+  createBillLimit: async (realmId: string, data: BillLimit) => {
+    set({ submitting: true, error: null });
+    let newBillLimit: BillLimit | null = null;
+    try {
+      const response = await axios.post<BillLimit>(
+        `/realms/${realmId}/bill-limits`,
+        data
+      );
+      newBillLimit = response.data;
+      set((state) => ({ billLimits: [...state.billLimits, newBillLimit!] }));
+    } catch (error) {
+      set({ error: "Failed to create bill limit. Please try again." });
+      console.error("Creating bill limit failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+    return newBillLimit;
+  },
+  updateBillLimit: async (
+    realmId: string,
+    billLimitId: string,
+    data: Partial<BillLimit>
+  ) => {
+    set({ submitting: true, error: null });
+    try {
+      const response = await axios.put<BillLimit>(
+        `/realms/${realmId}/bill-limits/${billLimitId}`,
+        data
+      );
+      set((state) => ({
+        billLimits: state.billLimits.map((billLimit) =>
+          billLimit.id === billLimitId ? response.data : billLimit
+        ),
+      }));
+    } catch (error) {
+      set({ error: "Failed to update bill limit. Please try again." });
+      console.error("Updating bill limit failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+  },
+  deleteBillLimit: async (realmId: string, billLimitId: string) => {
+    set({ submitting: true, error: null });
+    try {
+      await axios.delete(`/realms/${realmId}/bill-limits/${billLimitId}`);
+      set((state) => ({
+        billLimits: state.billLimits.filter(
+          (billLimit) => billLimit.id !== billLimitId
+        ),
+      }));
+    } catch (error) {
+      set({ error: "Failed to delete bill limit. Please try again." });
+      console.error("Deleting bill limit failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+  },
+  overheads: [],
+  fetchOverheads: async (realmId: string) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await axios.get<Overhead[]>(
+        `/realms/${realmId}/overheads`
+      );
+      set({ overheads: response.data });
+    } catch (error) {
+      set({ error: "Failed to fetch overheads. Please try again." });
+      console.error("Fetching overheads failed", error);
+    } finally {
+      set({ loading: false });
+    }
+  },
+  createOverhead: async (realmId: string, data: Overhead) => {
+    set({ submitting: true, error: null });
+    let newOverhead: Overhead | null = null;
+    try {
+      const response = await axios.post<Overhead>(
+        `/realms/${realmId}/overheads`,
+        data
+      );
+      newOverhead = response.data;
+      set((state) => ({ overheads: [...state.overheads, newOverhead!] }));
+    } catch (error) {
+      set({ error: "Failed to create overhead. Please try again." });
+      console.error("Creating overhead failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+    return newOverhead;
+  },
+  updateOverhead: async (
+    realmId: string,
+    overheadId: string,
+    data: Partial<Overhead>
+  ) => {
+    set({ submitting: true, error: null });
+    try {
+      const response = await axios.put<Overhead>(
+        `/realms/${realmId}/overheads/${overheadId}`,
+        data
+      );
+      set((state) => ({
+        overheads: state.overheads.map((overhead) =>
+          overhead.id === overheadId ? response.data : overhead
+        ),
+      }));
+    } catch (error) {
+      set({ error: "Failed to update overhead. Please try again." });
+      console.error("Updating overhead failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+  },
+  deleteOverhead: async (realmId: string, overheadId: string) => {
+    set({ submitting: true, error: null });
+    try {
+      await axios.delete(`/realms/${realmId}/overheads/${overheadId}`);
+      set((state) => ({
+        overheads: state.overheads.filter(
+          (overhead) => overhead.id !== overheadId
+        ),
+      }));
+    } catch (error) {
+      set({ error: "Failed to delete overhead. Please try again." });
+      console.error("Deleting overhead failed", error);
+    } finally {
+      set({ submitting: false });
     }
   },
 }));
