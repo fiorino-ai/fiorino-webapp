@@ -51,6 +51,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRealmsStore } from "@/stores/RealmStore";
 import Loading from "@/components/custom/Loading";
 import { useAuthStore } from "@/stores/SessionStore";
+import { WelcomeScreen } from "./WelcomeScreen";
 
 export const MainLayout: React.FC = () => {
   const location = useLocation();
@@ -77,6 +78,10 @@ export const MainLayout: React.FC = () => {
 
   if (realmsLoading) {
     return <Loading />;
+  }
+
+  if (!activeRealm) {
+    return <WelcomeScreen />;
   }
 
   // TODO: If no realms, show a message to create a realm

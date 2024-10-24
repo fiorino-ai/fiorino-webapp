@@ -8,8 +8,8 @@ interface Props {
 }
 
 const ProtectedRoute: React.FC<Props> = (user) => {
-  const { user: authUser } = useAuthStore();
-  console.log("protected route", { user, authUser });
+  // const { user: authUser } = useAuthStore();
+  console.log("protected route", user);
 
   if (!user) {
     return <Navigate to="/auth/login" />;
