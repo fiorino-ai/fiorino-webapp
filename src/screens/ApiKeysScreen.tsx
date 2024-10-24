@@ -1,6 +1,7 @@
 import { ApiKeyDialog } from "@/components/custom/ApiKeyDialog";
 import { DeleteApiKeyDialog } from "@/components/custom/DeleteApiKeyDialog";
 import { SaveApiKeyDialog } from "@/components/custom/SaveApiKeyDialog";
+import { EditApiKeyDialog } from "@/components/custom/EditApiKeyDialog";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
-import { ApiKey, NewApiKey } from "@/types";
+import { ApiKey, NewApiKey, EditedApiKey } from "@/types";
 import { Check, Pencil, Plus, Trash, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -24,6 +25,7 @@ const realmDataSelector = (state: RealmDataState) => ({
   submitting: state.submitting,
   createApiKey: state.createApiKey,
   deleteApiKey: state.deleteApiKey,
+  updateApiKey: state.updateApiKey,
 });
 
 const realmsSelector = (state: RealmsState) => ({
@@ -36,6 +38,8 @@ export const ApiKeysScreen: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentApiKey, setCurrentApiKey] = useState<ApiKey | null>(null);
   const [newApiKey, setNewApiKey] = useState<ApiKey | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingApiKey, setEditingApiKey] = useState<ApiKey | null>(null);
 
   console.log({ activeRealm });
 
@@ -46,6 +50,7 @@ export const ApiKeysScreen: React.FC = () => {
     submitting,
     createApiKey,
     deleteApiKey,
+    updateApiKey,
   } = useRealmDataStore(useShallow(realmDataSelector));
 
   useEffect(() => {
@@ -75,6 +80,21 @@ export const ApiKeysScreen: React.FC = () => {
   const handleOnDeleteClick = (apiKey: ApiKey) => {
     setCurrentApiKey(apiKey);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleEdit = (apiKey: ApiKey) => {
+    setEditingApiKey(apiKey);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (values: EditedApiKey) => {
+    if (!activeRealm || !editingApiKey) return;
+
+    await updateApiKey(activeRealm.id, editingApiKey.id, values);
+    setIsEditDialogOpen(false);
+    setEditingApiKey(null);
+    // Optionally, you can refresh the API keys list here
+    // await fetchApiKeys(activeRealm.id);
   };
 
   console.log({ apiKeys });
@@ -138,7 +158,11 @@ export const ApiKeysScreen: React.FC = () => {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(apiKey)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
@@ -172,9 +196,24 @@ export const ApiKeysScreen: React.FC = () => {
       {currentApiKey && (
         <DeleteApiKeyDialog
           open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
+          onOpenChange={() => {
+            setCurrentApiKey(null);
+            setIsDeleteDialogOpen(false);
+          }}
           apiKey={currentApiKey}
           onConfirm={handleDelete}
+        />
+      )}
+      {editingApiKey && (
+        <EditApiKeyDialog
+          apiKey={editingApiKey}
+          open={isEditDialogOpen}
+          onOpenChange={() => {
+            setEditingApiKey(null);
+            setIsEditDialogOpen(false);
+          }}
+          submitting={submitting}
+          onSubmit={handleEditSubmit}
         />
       )}
     </>

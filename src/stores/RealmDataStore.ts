@@ -101,7 +101,7 @@ export const useRealmDataStore = create<RealmDataState>((set) => ({
   ) => {
     set({ submitting: true, error: null });
     try {
-      const response = await axios.put<ApiKey>(
+      const response = await axios.patch<ApiKey>(
         `/realms/${realmId}/api-keys/${apiKeyId}`,
         payload
       );
