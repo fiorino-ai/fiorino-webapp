@@ -10,48 +10,54 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AudioWaveform,
-  BadgeCheck,
   BarChart2,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
-  Folder,
-  Forward,
-  Frame,
-  GalleryVerticalEnd,
+  Lock,
   LogOut,
-  MoreHorizontal,
   PanelLeft,
-  PieChart,
   Plus,
-  Sparkles,
-  Trash2,
   Webhook,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRealmsStore } from "@/stores/RealmStore";
+import { memo, useEffect } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import Loading from "@/components/custom/Loading";
-import { useAuthStore } from "@/stores/SessionStore";
+import { SessionState, useAuthStore } from "@/stores/SessionStore";
 import { WelcomeScreen } from "./WelcomeScreen";
+import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
+import { useShallow } from "zustand/react/shallow";
+
+const sessionSelector = (state: SessionState) => ({
+  user: state.user,
+  logout: state.logout,
+});
+
+const realmsSelector = (state: RealmsState) => ({
+  realms: state.realms,
+  fetchRealms: state.fetchRealms,
+  loading: state.loading,
+  activeRealm: state.activeRealm,
+  setActiveRealm: state.setActiveRealm,
+});
+
+const realmDataSelector = (state: RealmDataState) => ({
+  reset: state.reset,
+});
+
+const MemoizedOutlet = memo(Outlet);
 
 export const MainLayout: React.FC = () => {
   const location = useLocation();
@@ -61,8 +67,9 @@ export const MainLayout: React.FC = () => {
     loading: realmsLoading,
     activeRealm,
     setActiveRealm,
-  } = useRealmsStore();
-  const { user, logout } = useAuthStore();
+  } = useRealmsStore(useShallow(realmsSelector));
+  const { user, logout } = useAuthStore(useShallow(sessionSelector));
+  const { reset } = useRealmDataStore(useShallow(realmDataSelector));
 
   useEffect(() => {
     const fetchAndSetRealms = async () => {
@@ -74,7 +81,13 @@ export const MainLayout: React.FC = () => {
     };
 
     fetchAndSetRealms();
-  }, [fetchRealms]);
+  }, []);
+
+  useEffect(() => {
+    if (activeRealm) {
+      reset();
+    }
+  }, [activeRealm]);
 
   if (realmsLoading) {
     return <Loading />;
@@ -157,6 +170,14 @@ export const MainLayout: React.FC = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"api-keys"}>
+                    <Lock />
+                    <span>API keys</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
@@ -235,6 +256,7 @@ export const MainLayout: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
+              {/* <MemoizedOutlet /> */}
               <Outlet />
             </motion.div>
           </AnimatePresence>

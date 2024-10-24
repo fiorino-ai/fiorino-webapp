@@ -2,7 +2,7 @@ import { create } from "zustand";
 import axiosIstance from "@/lib/axios";
 import { Realm } from "@/types";
 
-interface RealmsState {
+export interface RealmsState {
   realms: Realm[];
   activeRealm: Realm | null;
   loading: boolean;

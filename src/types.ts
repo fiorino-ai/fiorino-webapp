@@ -21,3 +21,15 @@ export interface RealmCostKPI {
 export interface RealmActivityKPI {
   [key: string]: any;
 }
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  masked: string;
+  is_disabled: boolean;
+  disabled_at: Date | null;
+  value?: string;
+}
+
+export type NewApiKey = Pick<ApiKey, "name">;
+export type EditedApiKey = Pick<ApiKey, "name" | "is_disabled">;

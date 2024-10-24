@@ -5,10 +5,12 @@ import { ActivityUsageScreen } from "./ActivityUsageScreen";
 import { AuthLayout } from "@/components/custom/AuthLayout";
 import { LoginScreen } from "./LoginScreen";
 import ProtectedRoute from "@/components/custom/ProtectedRoute";
-import { useAuthStore } from "@/stores/SessionStore";
+import { SessionState, useAuthStore } from "@/stores/SessionStore";
 import { useEffect } from "react";
 import Loading from "@/components/custom/Loading";
 import AuthRoute from "@/components/custom/AuthRoute";
+import { ApiKeysScreen } from "./ApiKeysScreen";
+import { useShallow } from "zustand/react/shallow";
 
 const RedirectToMainPage: React.FC = () => {
   return <Navigate to={`/realms/usage`} />;
@@ -18,12 +20,19 @@ const RedirectToLoginPage: React.FC = () => {
   return <Navigate to={`/auth/login`} />;
 };
 
+const sessionSelector = (state: SessionState) => ({
+  verifyToken: state.verifyToken,
+  verifyingToken: state.verifyingToken,
+});
+
 export const Navigation: React.FC = () => {
-  const { verifyToken, verifyingToken } = useAuthStore();
+  const { verifyToken, verifyingToken } = useAuthStore(
+    useShallow(sessionSelector)
+  );
 
   useEffect(() => {
     verifyToken();
-  }, [verifyToken]);
+  }, []);
 
   if (verifyingToken) {
     return <Loading />;
@@ -43,6 +52,7 @@ export const Navigation: React.FC = () => {
             <Route index element={<RedirectToMainPage />} />
             <Route path="usage" element={<CostUsageScreen />} />
             <Route path="usage/activity" element={<ActivityUsageScreen />} />
+            <Route path="api-keys" element={<ApiKeysScreen />} />
           </Route>
         </Route>
         {/* <Route path="*" element={<Navigate to="/realms" />} /> */}

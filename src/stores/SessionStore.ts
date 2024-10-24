@@ -2,7 +2,7 @@ import { create } from "zustand";
 import axios from "@/lib/axios";
 import { LoginResponse, User } from "@/types";
 
-interface SessionState {
+export interface SessionState {
   user: User | null;
   loginLoading: boolean;
   signupLoading: boolean;
@@ -59,7 +59,7 @@ export const useAuthStore = create<SessionState>((set) => ({
   verifyToken: async () => {
     const token = sessionStorage.getItem("access_token");
     if (!token) {
-      set({ user: null });
+      set({ user: null, verifyingToken: false });
       return;
     }
     // set({ verifyingToken: true });
