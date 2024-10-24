@@ -1,7 +1,5 @@
-import {
-  ApiKeyDialog,
-  ApiKeyFormSchema,
-} from "@/components/custom/ApiKeyDialog";
+import { ApiKeyDialog } from "@/components/custom/ApiKeyDialog";
+import { DeleteApiKeyDialog } from "@/components/custom/DeleteApiKeyDialog";
 import { SaveApiKeyDialog } from "@/components/custom/SaveApiKeyDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +13,7 @@ import {
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import { ApiKey, NewApiKey } from "@/types";
-import { Check, Plus, X } from "lucide-react";
+import { Check, Pencil, Plus, Trash, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
@@ -25,6 +23,7 @@ const realmDataSelector = (state: RealmDataState) => ({
   loading: state.loading,
   submitting: state.submitting,
   createApiKey: state.createApiKey,
+  deleteApiKey: state.deleteApiKey,
 });
 
 const realmsSelector = (state: RealmsState) => ({
@@ -34,12 +33,20 @@ const realmsSelector = (state: RealmsState) => ({
 export const ApiKeysScreen: React.FC = () => {
   const { activeRealm } = useRealmsStore(useShallow(realmsSelector));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentApiKey, setCurrentApiKey] = useState<ApiKey | null>(null);
   const [newApiKey, setNewApiKey] = useState<ApiKey | null>(null);
 
   console.log({ activeRealm });
 
-  const { apiKeys, fetchApiKeys, loading, submitting, createApiKey } =
-    useRealmDataStore(useShallow(realmDataSelector));
+  const {
+    apiKeys,
+    fetchApiKeys,
+    loading,
+    submitting,
+    createApiKey,
+    deleteApiKey,
+  } = useRealmDataStore(useShallow(realmDataSelector));
 
   useEffect(() => {
     console.log({ activeRealm });
@@ -55,6 +62,19 @@ export const ApiKeysScreen: React.FC = () => {
       setIsDialogOpen(false);
       setNewApiKey(apiKey);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!currentApiKey || !activeRealm) return;
+
+    await deleteApiKey(activeRealm.id, currentApiKey.id);
+    setIsDeleteDialogOpen(false);
+    setCurrentApiKey(null);
+  };
+
+  const handleOnDeleteClick = (apiKey: ApiKey) => {
+    setCurrentApiKey(apiKey);
+    setIsDeleteDialogOpen(true);
   };
 
   console.log({ apiKeys });
@@ -117,6 +137,18 @@ export const ApiKeysScreen: React.FC = () => {
                     <Check className="size-4" />
                   )}
                 </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleOnDeleteClick(apiKey)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -135,6 +167,14 @@ export const ApiKeysScreen: React.FC = () => {
           apiKey={newApiKey}
           open={Boolean(true)}
           onOpenChange={() => setNewApiKey(null)}
+        />
+      )}
+      {currentApiKey && (
+        <DeleteApiKeyDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          apiKey={currentApiKey}
+          onConfirm={handleDelete}
         />
       )}
     </>
