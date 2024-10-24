@@ -20,7 +20,7 @@ export const useAuthStore = create<SessionState>((set) => ({
   loginLoading: false,
   signupLoading: false,
   error: null,
-  verifyingToken: false,
+  verifyingToken: true,
   login: async (email, password) => {
     set({ loginLoading: true, error: null });
     try {
@@ -62,7 +62,7 @@ export const useAuthStore = create<SessionState>((set) => ({
       set({ user: null });
       return;
     }
-    set({ verifyingToken: true });
+    // set({ verifyingToken: true });
     try {
       const response = await axios.get<User>("/auth/me");
       set({ user: response.data });

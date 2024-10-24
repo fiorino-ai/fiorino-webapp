@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "@/lib/axios";
+import axiosIstance from "@/lib/axios";
 import { Realm } from "@/types";
 
 interface RealmsState {
@@ -22,7 +22,7 @@ export const useRealmsStore = create<RealmsState>((set, get) => ({
   fetchRealms: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.get<Realm[]>("/realms");
+      const response = await axiosIstance.get<Realm[]>("/realms");
       set({ realms: response.data });
     } catch (error) {
       set({ error: "Failed to fetch realms. Please try again." });
@@ -40,7 +40,7 @@ export const useRealmsStore = create<RealmsState>((set, get) => ({
 
     set({ submitting: true, error: null });
     try {
-      const response = await axios.post<Realm>("/realms", realm);
+      const response = await axiosIstance.post<Realm>("/realms", realm);
       newRealm = response.data;
       set({ realms: [response.data, ...get().realms] });
     } catch (error) {

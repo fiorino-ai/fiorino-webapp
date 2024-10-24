@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/custom/ProtectedRoute";
 import { useAuthStore } from "@/stores/SessionStore";
 import { useEffect } from "react";
 import Loading from "@/components/custom/Loading";
+import AuthRoute from "@/components/custom/AuthRoute";
 
 const RedirectToMainPage: React.FC = () => {
   return <Navigate to={`/realms/usage`} />;
@@ -18,35 +19,26 @@ const RedirectToLoginPage: React.FC = () => {
 };
 
 export const Navigation: React.FC = () => {
-  const { verifyToken, verifyingToken, user } = useAuthStore();
+  const { verifyToken, verifyingToken } = useAuthStore();
 
   useEffect(() => {
     verifyToken();
   }, [verifyToken]);
 
-  console.log(verifyingToken, user);
-
   if (verifyingToken) {
     return <Loading />;
   }
 
-  // if (!user) {
-  //   return (
-  //     <Routes>
-
-  //       <Route path="*" element={<Navigate to="/auth/login" />} />
-  //     </Routes>
-  //   );
-  // }
-
   return (
     <div>
       <Routes>
-        <Route path="/auth" element={<AuthLayout />}>
-          <Route path="/auth" element={<RedirectToLoginPage />} />
-          <Route path="/auth/login" element={<LoginScreen />} />
+        <Route element={<AuthRoute />}>
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route index element={<RedirectToLoginPage />} />
+            <Route path="/auth/login" element={<LoginScreen />} />
+          </Route>
         </Route>
-        <Route element={<ProtectedRoute user={user} />}>
+        <Route element={<ProtectedRoute />}>
           <Route path="/realms" element={<MainLayout />}>
             <Route index element={<RedirectToMainPage />} />
             <Route path="usage" element={<CostUsageScreen />} />
@@ -54,6 +46,7 @@ export const Navigation: React.FC = () => {
           </Route>
         </Route>
         {/* <Route path="*" element={<Navigate to="/realms" />} /> */}
+        <Route path="*" element={<Navigate to="/auth/login" />} />
       </Routes>
     </div>
   );

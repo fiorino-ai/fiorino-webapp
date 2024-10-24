@@ -84,8 +84,6 @@ export const MainLayout: React.FC = () => {
     return <WelcomeScreen />;
   }
 
-  // TODO: If no realms, show a message to create a realm
-
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon" variant="inset">
