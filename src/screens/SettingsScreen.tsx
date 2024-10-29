@@ -40,6 +40,7 @@ import { BillLimitDialog } from "@/components/custom/BillLimitDialog";
 import { OverheadDialog } from "@/components/custom/OverheadDialog";
 import { BillLimit, Overhead } from "@/types";
 import { Pencil, Plus, Trash } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 const realmsSelector = (state: RealmsState) => ({
   activeRealm: state.activeRealm,
@@ -198,45 +199,52 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col items-center space-y-6 max-w-md mx-auto">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Update Realm Name</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleUpdateRealm)}
-              className="space-y-4"
-            >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Realm Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={realmSubmitting}>
-                Update Realm Name
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+    <div className="container mx-auto p-6 space-y-20 max-w-3xl">
+      <section>
+        <h2 className="text-2xl font-bold mb-4">General</h2>
+        <Separator />
+        <div className="space-y-6">
+          <div>
+            <div className="flex space-x-4">
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleUpdateRealm)}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Realm Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={realmSubmitting}>
+                    Update Realm Name
+                  </Button>
+                </form>
+              </Form>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Bill Limit</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <span>Enable Bill Limit</span>
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Bill Limit</h2>
+        <Separator />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Enable Bill Limit</h3>
+              <p className="text-gray-400">
+                Set a maximum spending limit for this realm.
+              </p>
+            </div>
             <Switch
               checked={activeRealm.bill_limit_enabled}
               onCheckedChange={handleToggleBillLimit}
@@ -245,12 +253,6 @@ export const SettingsScreen: React.FC = () => {
           </div>
           {activeRealm.bill_limit_enabled && (
             <>
-              <Button
-                onClick={() => setIsBillLimitDialogOpen(true)}
-                className="mb-4"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Bill Limit
-              </Button>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -293,18 +295,25 @@ export const SettingsScreen: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+              <Button onClick={() => setIsBillLimitDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Bill Limit
+              </Button>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Overhead</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <span>Enable Overhead</span>
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Overhead</h2>
+        <Separator />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Enable Overhead</h3>
+              <p className="text-gray-400">
+                Configure overhead costs for this realm.
+              </p>
+            </div>
             <Switch
               checked={activeRealm.overhead_enabled}
               onCheckedChange={handleToggleOverhead}
@@ -313,12 +322,6 @@ export const SettingsScreen: React.FC = () => {
           </div>
           {activeRealm.overhead_enabled && (
             <>
-              <Button
-                onClick={() => setIsOverheadDialogOpen(true)}
-                className="mb-4"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Overhead
-              </Button>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -361,41 +364,56 @@ export const SettingsScreen: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+              <Button onClick={() => setIsOverheadDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Overhead
+              </Button>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-red-600">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AlertDialog
-            open={isDeleteDialogOpen}
-            onOpenChange={setIsDeleteDialogOpen}
-          >
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">Delete Realm</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete
-                  your realm and remove all associated data.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteRealm}>
-                  Delete Realm
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardContent>
-      </Card>
+      <section>
+        <h2 className="text-2xl font-bold mb-4 text-red-500">Danger Zone</h2>
+        <div className="border border-red-600 rounded-md p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Delete this realm</h3>
+              <p className="text-gray-400">
+                Once you delete a realm, there is no going back. Please be
+                certain.
+              </p>
+            </div>
+            <AlertDialog
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}
+            >
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Delete this realm</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-gray-800 text-white">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-400">
+                    This action cannot be undone. This will permanently delete
+                    your realm and remove all associated data from our servers.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="bg-gray-700 text-white hover:bg-gray-600">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 text-white hover:bg-red-700"
+                    onClick={handleDeleteRealm}
+                  >
+                    Delete Realm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </section>
 
       <BillLimitDialog
         billLimit={currentBillLimit || undefined}

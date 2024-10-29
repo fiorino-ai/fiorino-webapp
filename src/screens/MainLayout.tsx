@@ -30,6 +30,7 @@ import {
   LogOut,
   PanelLeft,
   Plus,
+  UsersRound,
   Webhook,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -192,6 +193,14 @@ export const MainLayout: React.FC = () => {
                   <Link to={"usage"}>
                     <BarChart2 />
                     <span>Usage</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"accounts"}>
+                    <UsersRound />
+                    <span>Accounts</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

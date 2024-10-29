@@ -37,7 +37,7 @@ export type NewApiKey = Pick<ApiKey, "name">;
 export type EditedApiKey = Pick<ApiKey, "name" | "is_disabled">;
 
 export interface BillLimit {
-  id?: string; // Add this if the API returns an id
+  id?: string;
   valid_from: string;
   valid_to: string;
   amount: number;
@@ -48,4 +48,27 @@ export interface Overhead {
   valid_from: string;
   valid_to: string;
   amount: number;
+}
+
+export interface Account {
+  id: string;
+  external_id: string;
+  created_at: Date;
+  data: Record<string, string>;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    total_items: number;
+    current_page: number;
+    items_per_page: number;
+    total_pages: number;
+  };
+}
+
+export interface AccountsFilter {
+  page?: number;
+  limit?: number;
+  search?: string;
 }

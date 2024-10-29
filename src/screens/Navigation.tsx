@@ -12,6 +12,7 @@ import AuthRoute from "@/components/custom/AuthRoute";
 import { ApiKeysScreen } from "./ApiKeysScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { useShallow } from "zustand/react/shallow";
+import { AccountsScreen } from "./AccountsScreen";
 
 const RedirectToMainPage: React.FC = () => {
   return <Navigate to={`/realms/usage`} />;
@@ -53,6 +54,7 @@ export const Navigation: React.FC = () => {
             <Route index element={<RedirectToMainPage />} />
             <Route path="usage" element={<CostUsageScreen />} />
             <Route path="usage/activity" element={<ActivityUsageScreen />} />
+            <Route path="accounts" element={<AccountsScreen />} />
             <Route path="api-keys" element={<ApiKeysScreen />} />
             <Route path="settings" element={<SettingsScreen />} />
           </Route>
