@@ -17,12 +17,95 @@ export interface Realm {
   created_at: Date;
 }
 
+export interface DailyModelTotalCost {
+  date: string;
+  provider_name: string;
+  llm_model_name: string;
+  total_cost: number;
+}
+
+export interface DailyModelCost {
+  date: string;
+  cost: number;
+}
+
+export interface ModelDailyCost {
+  provider_name: string;
+  llm_model_name: string;
+  daily_costs: DailyModelCost[];
+}
+
+export interface ModelUsage {
+  provider_name: string;
+  llm_model_name: string;
+  total_model_price: number;
+  total_tokens: number;
+}
+
+export interface LLM {
+  provider_name: string;
+  llm_model_name: string;
+}
+
 export interface RealmCostKPI {
-  [key: string]: any;
+  daily_costs: DailyModelTotalCost[];
+  model_costs: ModelDailyCost[];
+  most_used_models: ModelUsage[];
+  total_cost: number;
+  total_usage_fees: number;
+  llms: LLM[];
+}
+
+export interface ChartCostSerie {
+  date: string;
+  [llm_model_name: string]: string | number;
+}
+
+export interface ChartCostData {
+  [date: string]: {
+    [llm_model_name: string]: number;
+  };
+}
+
+export interface DailyTotalTokens {
+  date: string;
+  total_input_tokens: number;
+  total_output_tokens: number;
+}
+
+export interface ModelDailyTokens {
+  llm_model_name: string;
+  data: DailyTotalTokens[];
+}
+
+export interface ApiKeyUsage {
+  api_key_name: string;
+  percentage: number;
+  total_activity_records: number;
+}
+
+export interface TopApiKeys {
+  total_events: number;
+  api_keys: ApiKeyUsage[];
+}
+
+export interface UserUsage {
+  account_id: string;
+  account_name: string;
+  percentage: number;
+  total_activity_records: number;
+}
+
+export interface TopUsers {
+  total_events: number;
+  users: UserUsage[];
 }
 
 export interface RealmActivityKPI {
-  [key: string]: any;
+  daily_tokens: DailyTotalTokens[];
+  model_daily_tokens: ModelDailyTokens[];
+  top_api_keys: TopApiKeys;
+  top_users: TopUsers;
 }
 
 export interface ApiKey {

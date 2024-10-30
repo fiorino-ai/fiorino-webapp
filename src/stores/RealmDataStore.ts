@@ -25,8 +25,8 @@ export interface RealmDataState {
   submitting: boolean;
   error: string | null;
   reset: () => void;
-  fetchCostKPI: (realmId: string) => Promise<void>;
-  fetchActivityKPI: (realmId: string) => Promise<void>;
+  fetchCostKPI: (realmId: string, accountId?: string) => Promise<void>;
+  fetchActivityKPI: (realmId: string, accountId?: string) => Promise<void>;
   fetchApiKeys: (realmId: string) => Promise<void>;
   createApiKey: (realmId: string, data: NewApiKey) => Promise<ApiKey | null>;
   updateApiKey: (
@@ -95,14 +95,21 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       accounts: [],
       overheads: [],
     }),
-  fetchCostKPI: async (realmId: string) => {
+  fetchCostKPI: async (realmId: string, accountId?: string) => {
     const { kpiPeriod } = get();
-    set({ loading: true, error: null });
+    set({ loading: true, costKPI: null, error: null });
     try {
+      const params = new URLSearchParams({
+        start_date: formatDateToISO(kpiPeriod.from),
+        end_date: formatDateToISO(kpiPeriod.to),
+      });
+
+      if (accountId) {
+        params.append("account_id", accountId);
+      }
+
       const response = await axios.get<RealmCostKPI>(
-        `/realms/${realmId}/usage/cost?start_date=${formatDateToISO(
-          kpiPeriod.from
-        )}&end_date=${formatDateToISO(kpiPeriod.to)}`
+        `/realms/${realmId}/usage/cost?${params.toString()}`
       );
       set({ costKPI: response.data });
     } catch (error) {
@@ -112,14 +119,21 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ loading: false });
     }
   },
-  fetchActivityKPI: async (realmId: string) => {
+  fetchActivityKPI: async (realmId: string, accountId?: string) => {
     const { kpiPeriod } = get();
-    set({ loading: true, error: null });
+    set({ loading: true, activityKPI: null, error: null });
     try {
+      const params = new URLSearchParams({
+        start_date: formatDateToISO(kpiPeriod.from),
+        end_date: formatDateToISO(kpiPeriod.to),
+      });
+
+      if (accountId) {
+        params.append("account_id", accountId);
+      }
+
       const response = await axios.get<RealmActivityKPI>(
-        `/realms/${realmId}/usage/activity?start_date=${formatDateToISO(
-          kpiPeriod.from
-        )}&end_date=${formatDateToISO(kpiPeriod.to)}`
+        `/realms/${realmId}/usage/activity?${params.toString()}`
       );
       set({ activityKPI: response.data });
     } catch (error) {

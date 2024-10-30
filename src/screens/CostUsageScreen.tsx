@@ -1,7 +1,6 @@
 import MonthPicker from "@/components/custom/MonthPicker";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardHeader,
   CardTitle,
   CardContent,
@@ -22,11 +21,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getFirstDayOfMonth } from "@/lib/date";
+import { formatDailyCosts } from "@/lib/chart";
+import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { LoaderCircle } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar } from "recharts";
 import { useShallow } from "zustand/react/shallow";
 
@@ -44,80 +45,41 @@ const realmsSelector = (state: RealmsState) => ({
 
 export const CostUsageScreen: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const accountId = searchParams.get("accountId");
 
   const { activeRealm } = useRealmsStore(useShallow(realmsSelector));
   const { kpi, fetchCostKPI, loading, period, setPeriod } = useRealmDataStore(
     useShallow(realmDataSelector)
   );
 
-  console.log({ period });
-
-  console.log({ activeRealm });
-
-  // const initData = async () => {
-  //   const response = await fetch(
-  //     "http://localhost:8000/api/v1/kpi/cost?start_date=2024-09-01&end_date=2024-10-01"
-  //   );
-
-  //   if (!response.ok) {
-  //     throw new Error("Failed to fetch data");
-  //   }
-
-  //   const data = await response.json();
-  //   console.log(data);
-
-  //   setKpi(data);
-  // };
-
   useEffect(() => {
     if (activeRealm?.id) {
-      fetchCostKPI(activeRealm.id);
+      fetchCostKPI(activeRealm.id, accountId || undefined);
     }
-  }, [activeRealm, period]);
+  }, [activeRealm, period, accountId]);
 
   const handleNavigateToActivity = () => {
-    navigate(`/realms/usage/activity`);
+    if (accountId) {
+      navigate(`/realms/usage/activity?accountId=${accountId}`);
+    } else {
+      navigate(`/realms/usage/activity`);
+    }
   };
 
   const dailyCosts = useMemo(() => {
-    if (!kpi) {
-      return [];
-    }
-
-    const costs = {};
-    const models = [];
-
-    for (const cost of kpi.daily_costs) {
-      if (!costs[cost.date]) {
-        costs[cost.date] = {};
-      }
-      costs[cost.date][cost.llm_model_name] = cost.total_cost;
-
-      if (!models.includes(cost.llm_model_name)) {
-        models.push(cost.llm_model_name);
-      }
-    }
-
-    return {
-      series: Object.keys(costs).map((date) => {
-        return {
-          date,
-          ...costs[date],
-        };
-      }),
-      models,
-    };
-  }, [kpi]);
-
-  // if (!kpi) {
-  //   return <div>Loading...</div>;
-  // }
+    return formatDailyCosts(kpi?.daily_costs || [], period);
+  }, [kpi, period]);
 
   return (
     <>
       <div className="flex justify-between items-center mb-6">
         <div className="w-full">
-          <h2 className="text-2xl font-bold mb-2">Monthly Spend</h2>
+          <div className="w-full flex flex-row items-center gap-2">
+            <h2 className="text-2xl font-bold mb-2">Usage: Cost</h2>
+            {loading && <LoaderCircle className="animate-spin size-4" />}
+          </div>
+
           <div className="flex justify-between flex-row w-full">
             <Tabs value={"cost"} onValueChange={handleNavigateToActivity}>
               <TabsList>
@@ -133,6 +95,7 @@ export const CostUsageScreen: React.FC = () => {
                     ? getFirstDayOfMonth(activeRealm?.created_at)
                     : undefined
                 }
+                maxDate={getLastDayOfMonth(new Date())}
                 onChange={setPeriod}
               />
             </div>
@@ -153,14 +116,14 @@ export const CostUsageScreen: React.FC = () => {
                 }}
                 className="min-h-[100px] w-full max-h-[300px]"
               >
-                <BarChart data={dailyCosts.series}>
+                <BarChart data={dailyCosts}>
                   <XAxis dataKey="date" />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  {dailyCosts.models.map((model, index) => (
+                  {kpi.llms.map((model, index) => (
                     <Bar
                       key={index}
-                      dataKey={model}
+                      dataKey={model.llm_model_name}
                       fill={`hsl(var(--chart-${index + 1}))`}
                       stackId="daily-cost"
                     />
@@ -169,33 +132,34 @@ export const CostUsageScreen: React.FC = () => {
               </ChartContainer>
             </div>
             <div>
-              <h3>Model Usage</h3>
+              <h3>Model Cost</h3>
               <div className="grid grid-cols-2 gap-6">
                 {kpi.model_costs.map((model, index) => (
-                  <ChartContainer
-                    key={index}
-                    config={{
-                      tokens: {
-                        label: model.llm_model_name,
-                      },
-                    }}
-                  >
+                  <div key={index}>
                     <h3 className="text-lg font-semibold mb-4">
                       {model.llm_model_name}
                     </h3>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={model.daily_costs}>
-                        <XAxis dataKey="date" />
-                        <YAxis yAxisId="left" orientation="left" />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="cost"
-                          fill={`hsl(var(--chart-1))`}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                    <ChartContainer
+                      config={{
+                        tokens: {
+                          label: model.llm_model_name,
+                        },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={model.daily_costs}>
+                          <XAxis dataKey="date" />
+                          <YAxis yAxisId="left" orientation="left" />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar
+                            yAxisId="left"
+                            dataKey="cost"
+                            fill={`hsl(var(--chart-1))`}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
                 ))}
               </div>
             </div>

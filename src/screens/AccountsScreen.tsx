@@ -10,18 +10,10 @@ import {
 } from "@/components/ui/table";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
-import { ApiKey, NewApiKey, EditedApiKey, Account } from "@/types";
-import { Check, Edit, Pencil, Plus, Trash, Trash2, X } from "lucide-react";
+import { ChartNoAxesColumn, ChartPie } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Pagination,
   PaginationContent,
@@ -30,6 +22,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useNavigate } from "react-router-dom";
 
 const realmDataSelector = (state: RealmDataState) => ({
   accounts: state.accounts,
@@ -47,49 +40,16 @@ const realmsSelector = (state: RealmsState) => ({
 });
 
 export const AccountsScreen: React.FC = () => {
-  const PAGE_LIMIT = 2;
+  const PAGE_LIMIT = 25;
+  const navigate = useNavigate();
 
   const { activeRealm } = useRealmsStore(useShallow(realmsSelector));
-  const {
-    accounts,
-    fetchAccounts,
-    loading,
-    deleteAccount,
-    updateAccount,
-    page,
-    pages,
-    total,
-  } = useRealmDataStore(useShallow(realmDataSelector));
+  const { accounts, fetchAccounts, loading, page, pages } = useRealmDataStore(
+    useShallow(realmDataSelector)
+  );
 
-  // const [accounts, setAccounts] = useState(mockAccounts);
   const [searchTerm, setSearchTerm] = useState("");
   const [search] = useDebounce(searchTerm, 500);
-
-  // const filteredAccounts = accounts.filter(
-  //   (account) =>
-  //     account.external_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     Object.values(account.data).some((value) =>
-  //       value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-  //     )
-  // );
-
-  // const indexOfLastItem = currentPage * itemsPerPage;
-  // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  // const currentAccounts = filteredAccounts.slice(
-  //   indexOfFirstItem,
-  //   indexOfLastItem
-  // );
-
-  // const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
-
-  const handleDelete = (id: Account["id"]) => {
-    // setAccounts(accounts.filter((account) => account.id !== id));
-  };
-
-  const handleEdit = (id: Account["id"]) => {
-    // Implement edit functionality
-    console.log("Edit account", id);
-  };
 
   useEffect(() => {
     if (activeRealm?.id && !loading) {
@@ -109,37 +69,13 @@ export const AccountsScreen: React.FC = () => {
     fetchAccounts(activeRealm.id, { page, limit: PAGE_LIMIT });
   };
 
-  // const handleDelete = async () => {
-  //   if (!currentApiKey || !activeRealm) return;
+  const handleNavigateToCostKPI = (accountId: string) => {
+    navigate(`/realms/usage?accountId=${accountId}`);
+  };
 
-  //   await deleteApiKey(activeRealm.id, currentApiKey.id);
-  //   setIsDeleteDialogOpen(false);
-  //   setCurrentApiKey(null);
-  // };
-
-  // const handleOnDeleteClick = (apiKey: ApiKey) => {
-  //   setCurrentApiKey(apiKey);
-  //   setIsDeleteDialogOpen(true);
-  // };
-
-  // const handleEdit = (apiKey: ApiKey) => {
-  //   setEditingApiKey(apiKey);
-  //   setIsEditDialogOpen(true);
-  // };
-
-  // const handleEditSubmit = async (values: EditedApiKey) => {
-  //   if (!activeRealm || !editingApiKey) return;
-
-  //   await updateApiKey(activeRealm.id, editingApiKey.id, values);
-  //   setIsEditDialogOpen(false);
-  //   setEditingApiKey(null);
-  //   // Optionally, you can refresh the API keys list here
-  //   // await fetchApiKeys(activeRealm.id);
-  // };
-
-  // if (loading) {
-  //   return <div>Loading...</div>;
-  // }
+  const handleNavigateToActivityKPI = (accountId: string) => {
+    navigate(`/realms/usage/activity?accountId=${accountId}`);
+  };
 
   return (
     <>
@@ -186,6 +122,20 @@ export const AccountsScreen: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => handleNavigateToCostKPI(account.id)}
+                  >
+                    <ChartPie className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleNavigateToActivityKPI(account.id)}
+                  >
+                    <ChartNoAxesColumn className="h-4 w-4" />
+                  </Button>
+                  {/* <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleEdit(account.id)}
                   >
                     <Pencil className="h-4 w-4" />
@@ -196,7 +146,7 @@ export const AccountsScreen: React.FC = () => {
                     onClick={() => handleDelete(account.id)}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </Button> */}
                 </div>
               </TableCell>
             </TableRow>
