@@ -25,7 +25,12 @@ export const useRealmsStore = create<RealmsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await axiosIstance.get<Realm[]>("/realms");
-      set({ realms: response.data });
+      set({
+        realms: response.data.map((r) => ({
+          ...r,
+          created_at: new Date(r.created_at),
+        })),
+      });
     } catch (error) {
       set({ error: "Failed to fetch realms. Please try again." });
       console.error("Fetching realms failed", error);

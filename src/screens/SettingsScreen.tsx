@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { useShallow } from "zustand/react/shallow";
@@ -88,7 +87,6 @@ export const SettingsScreen: React.FC = () => {
     createOverhead,
     updateOverhead,
     deleteOverhead,
-    loading,
     submitting,
   } = useRealmDataStore(useShallow(realmDataSelector));
 

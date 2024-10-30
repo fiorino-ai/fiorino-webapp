@@ -1,3 +1,4 @@
+import MonthPicker from "@/components/custom/MonthPicker";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,19 +22,37 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRealmDataStore } from "@/stores/RealmDataStore";
-import { useRealmsStore } from "@/stores/RealmStore";
-import { useEffect, useMemo } from "react";
+import { getFirstDayOfMonth } from "@/lib/date";
+import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
+import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar } from "recharts";
+import { useShallow } from "zustand/react/shallow";
+
+const realmDataSelector = (state: RealmDataState) => ({
+  kpi: state.costKPI,
+  fetchCostKPI: state.fetchCostKPI,
+  period: state.kpiPeriod,
+  loading: state.loading,
+  setPeriod: state.setKpiPeriod,
+});
+
+const realmsSelector = (state: RealmsState) => ({
+  activeRealm: state.activeRealm,
+});
 
 export const CostUsageScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { activeRealm } = useRealmsStore();
+
+  const { activeRealm } = useRealmsStore(useShallow(realmsSelector));
+  const { kpi, fetchCostKPI, loading, period, setPeriod } = useRealmDataStore(
+    useShallow(realmDataSelector)
+  );
+
+  console.log({ period });
 
   console.log({ activeRealm });
-
-  const { costKPI: kpi, fetchCostKPI, loading } = useRealmDataStore();
 
   // const initData = async () => {
   //   const response = await fetch(
@@ -54,7 +73,7 @@ export const CostUsageScreen: React.FC = () => {
     if (activeRealm?.id) {
       fetchCostKPI(activeRealm.id);
     }
-  }, [activeRealm]);
+  }, [activeRealm, period]);
 
   const handleNavigateToActivity = () => {
     navigate(`/realms/usage/activity`);
@@ -97,14 +116,27 @@ export const CostUsageScreen: React.FC = () => {
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <div>
+        <div className="w-full">
           <h2 className="text-2xl font-bold mb-2">Monthly Spend</h2>
-          <Tabs value={"cost"} onValueChange={handleNavigateToActivity}>
-            <TabsList>
-              <TabsTrigger value="cost">Cost</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex justify-between flex-row w-full">
+            <Tabs value={"cost"} onValueChange={handleNavigateToActivity}>
+              <TabsList>
+                <TabsTrigger value="cost">Cost</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div>
+              <MonthPicker
+                value={period}
+                minDate={
+                  activeRealm?.created_at
+                    ? getFirstDayOfMonth(activeRealm?.created_at)
+                    : undefined
+                }
+                onChange={setPeriod}
+              />
+            </div>
+          </div>
         </div>
       </div>
       {kpi ? (

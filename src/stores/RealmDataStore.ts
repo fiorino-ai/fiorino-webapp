@@ -11,11 +11,14 @@ import {
   Account,
   AccountsFilter,
   PaginatedResponse,
+  MonthRange,
 } from "@/types";
+import { formatDateToISO, getMonthRange } from "@/lib/date";
 
 export interface RealmDataState {
   costKPI: RealmCostKPI | null;
   activityKPI: RealmActivityKPI | null;
+  kpiPeriod: MonthRange;
   apiKeys: ApiKey[];
   billLimits: BillLimit[];
   loading: boolean;
@@ -65,11 +68,13 @@ export interface RealmDataState {
     data: Partial<Account>
   ) => Promise<void>;
   deleteAccount: (realmId: string, accountId: string) => Promise<void>;
+  setKpiPeriod: (range: MonthRange) => void;
 }
 
-export const useRealmDataStore = create<RealmDataState>((set) => ({
+export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   costKPI: null,
   activityKPI: null,
+  kpiPeriod: getMonthRange(new Date()),
   apiKeys: [],
   billLimits: [],
   overheads: [],
@@ -91,10 +96,13 @@ export const useRealmDataStore = create<RealmDataState>((set) => ({
       overheads: [],
     }),
   fetchCostKPI: async (realmId: string) => {
+    const { kpiPeriod } = get();
     set({ loading: true, error: null });
     try {
       const response = await axios.get<RealmCostKPI>(
-        `/realms/${realmId}/usage/cost?start_date=2024-09-01&end_date=2024-10-01`
+        `/realms/${realmId}/usage/cost?start_date=${formatDateToISO(
+          kpiPeriod.from
+        )}&end_date=${formatDateToISO(kpiPeriod.to)}`
       );
       set({ costKPI: response.data });
     } catch (error) {
@@ -105,10 +113,13 @@ export const useRealmDataStore = create<RealmDataState>((set) => ({
     }
   },
   fetchActivityKPI: async (realmId: string) => {
+    const { kpiPeriod } = get();
     set({ loading: true, error: null });
     try {
-      const response = await axios.get<RealmCostKPI>(
-        `/realms/${realmId}/usage/activity?start_date=2024-09-01&end_date=2024-10-01`
+      const response = await axios.get<RealmActivityKPI>(
+        `/realms/${realmId}/usage/activity?start_date=${formatDateToISO(
+          kpiPeriod.from
+        )}&end_date=${formatDateToISO(kpiPeriod.to)}`
       );
       set({ activityKPI: response.data });
     } catch (error) {
@@ -404,5 +415,8 @@ export const useRealmDataStore = create<RealmDataState>((set) => ({
     } finally {
       set({ submitting: false });
     }
+  },
+  setKpiPeriod: (range: MonthRange) => {
+    set({ kpiPeriod: range });
   },
 }));

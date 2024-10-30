@@ -14,6 +14,7 @@ export interface Realm {
   name: string;
   bill_limit_enabled: boolean;
   overhead_enabled: boolean;
+  created_at: Date;
 }
 
 export interface RealmCostKPI {
@@ -71,4 +72,9 @@ export interface AccountsFilter {
   page?: number;
   limit?: number;
   search?: string;
+}
+
+export interface MonthRange {
+  from: Date;
+  to: Date;
 }
