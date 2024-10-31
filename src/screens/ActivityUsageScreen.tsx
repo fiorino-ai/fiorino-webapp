@@ -1,3 +1,4 @@
+import AdvancedUsageFilter from "@/components/custom/AdvancedUsageFilter";
 import MonthPicker from "@/components/custom/MonthPicker";
 import {
   ChartContainer,
@@ -17,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
+import { UsageFilter } from "@/types";
 import { LoaderCircle } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -29,6 +31,11 @@ const realmDataSelector = (state: RealmDataState) => ({
   period: state.kpiPeriod,
   loading: state.loading,
   setPeriod: state.setKpiPeriod,
+  accounts: state.accounts,
+  isLoadingAccounts: state.accountsLoading,
+  fetchAccounts: state.fetchAccounts,
+  kpiFilters: state.kpiFilters,
+  setKpiFilters: state.setKpiFilters,
 });
 
 const realmsSelector = (state: RealmsState) => ({
@@ -39,16 +46,39 @@ export const ActivityUsageScreen: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accountId = searchParams.get("accountId");
+  const modelId = searchParams.get("modelId");
 
   const { activeRealm } = useRealmsStore(useShallow(realmsSelector));
-  const { kpi, fetchActivityKPI, loading, period, setPeriod } =
-    useRealmDataStore(useShallow(realmDataSelector));
+  const {
+    kpi,
+    fetchActivityKPI,
+    loading,
+    period,
+    setPeriod,
+    accounts,
+    isLoadingAccounts,
+    fetchAccounts,
+    kpiFilters,
+    setKpiFilters,
+  } = useRealmDataStore(useShallow(realmDataSelector));
 
   useEffect(() => {
     if (activeRealm?.id) {
-      fetchActivityKPI(activeRealm.id, accountId || undefined);
+      const _kpiFilters: UsageFilter[] = [];
+
+      if (accountId) {
+        _kpiFilters.push({ type: "account", id: accountId });
+      }
+      if (modelId) {
+        _kpiFilters.push({ type: "model", id: modelId });
+      }
+
+      setKpiFilters(_kpiFilters);
+
+      fetchActivityKPI(activeRealm.id);
+      fetchAccounts(activeRealm.id, { page: 1, limit: 10 });
     }
-  }, [activeRealm, period, accountId]);
+  }, [activeRealm, period, accountId, modelId]);
 
   const handleNavigateToCost = () => {
     if (accountId) {
@@ -56,6 +86,25 @@ export const ActivityUsageScreen: React.FC = () => {
     } else {
       navigate(`/realms/usage`);
     }
+  };
+
+  const handleSearchAccountsChange = async (search: string) => {
+    if (activeRealm) {
+      fetchAccounts(activeRealm.id, { page: 1, limit: 10, search });
+    }
+  };
+
+  const handleFiltersChange = (filters: UsageFilter[]) => {
+    const params = new URLSearchParams();
+
+    filters.forEach((filter) => {
+      params.append(
+        filter.type === "account" ? "accountId" : "modelId",
+        filter.id
+      );
+    });
+
+    navigate(`/realms/usage/activity?${params.toString()}`);
   };
 
   return (
@@ -74,7 +123,14 @@ export const ActivityUsageScreen: React.FC = () => {
                 <TabsTrigger value="activity">Activity</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div>
+            <div className="flex flex-row items-center gap-2">
+              <AdvancedUsageFilter
+                accounts={accounts}
+                isLoadingAccounts={isLoadingAccounts}
+                onSearchAccountsChange={handleSearchAccountsChange}
+                onChange={handleFiltersChange}
+                filters={kpiFilters}
+              />
               <MonthPicker
                 value={period}
                 minDate={

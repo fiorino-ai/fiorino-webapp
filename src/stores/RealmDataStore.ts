@@ -12,6 +12,7 @@ import {
   AccountsFilter,
   PaginatedResponse,
   MonthRange,
+  UsageFilter,
 } from "@/types";
 import { formatDateToISO, getMonthRange } from "@/lib/date";
 
@@ -19,14 +20,15 @@ export interface RealmDataState {
   costKPI: RealmCostKPI | null;
   activityKPI: RealmActivityKPI | null;
   kpiPeriod: MonthRange;
+  kpiFilters: UsageFilter[];
   apiKeys: ApiKey[];
   billLimits: BillLimit[];
   loading: boolean;
   submitting: boolean;
   error: string | null;
   reset: () => void;
-  fetchCostKPI: (realmId: string, accountId?: string) => Promise<void>;
-  fetchActivityKPI: (realmId: string, accountId?: string) => Promise<void>;
+  fetchCostKPI: (realmId: string) => Promise<void>;
+  fetchActivityKPI: (realmId: string) => Promise<void>;
   fetchApiKeys: (realmId: string) => Promise<void>;
   createApiKey: (realmId: string, data: NewApiKey) => Promise<ApiKey | null>;
   updateApiKey: (
@@ -69,12 +71,14 @@ export interface RealmDataState {
   ) => Promise<void>;
   deleteAccount: (realmId: string, accountId: string) => Promise<void>;
   setKpiPeriod: (range: MonthRange) => void;
+  setKpiFilters: (filters: UsageFilter[]) => void;
 }
 
 export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   costKPI: null,
   activityKPI: null,
   kpiPeriod: getMonthRange(new Date()),
+  kpiFilters: [],
   apiKeys: [],
   billLimits: [],
   overheads: [],
@@ -95,8 +99,8 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       accounts: [],
       overheads: [],
     }),
-  fetchCostKPI: async (realmId: string, accountId?: string) => {
-    const { kpiPeriod } = get();
+  fetchCostKPI: async (realmId: string) => {
+    const { kpiPeriod, kpiFilters } = get();
     set({ loading: true, costKPI: null, error: null });
     try {
       const params = new URLSearchParams({
@@ -104,9 +108,12 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
         end_date: formatDateToISO(kpiPeriod.to),
       });
 
-      if (accountId) {
-        params.append("account_id", accountId);
-      }
+      kpiFilters.forEach((filter) => {
+        params.append(
+          filter.type === "account" ? "account_id" : "model_id",
+          filter.id
+        );
+      });
 
       const response = await axios.get<RealmCostKPI>(
         `/realms/${realmId}/usage/cost?${params.toString()}`
@@ -119,8 +126,8 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ loading: false });
     }
   },
-  fetchActivityKPI: async (realmId: string, accountId?: string) => {
-    const { kpiPeriod } = get();
+  fetchActivityKPI: async (realmId: string) => {
+    const { kpiPeriod, kpiFilters } = get();
     set({ loading: true, activityKPI: null, error: null });
     try {
       const params = new URLSearchParams({
@@ -128,9 +135,12 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
         end_date: formatDateToISO(kpiPeriod.to),
       });
 
-      if (accountId) {
-        params.append("account_id", accountId);
-      }
+      kpiFilters.forEach((filter) => {
+        params.append(
+          filter.type === "account" ? "account_id" : "model_id",
+          filter.id
+        );
+      });
 
       const response = await axios.get<RealmActivityKPI>(
         `/realms/${realmId}/usage/activity?${params.toString()}`
@@ -378,7 +388,7 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
     }
   },
   getAccount: async (realmId: string, accountId: string) => {
-    set({ loading: true, error: null });
+    // set({ loading: true, error: null });
     try {
       const response = await axios.get<Account>(
         `/realms/${realmId}/accounts/${accountId}`
@@ -388,9 +398,10 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ error: "Failed to fetch account details. Please try again." });
       console.error("Fetching account details failed", error);
       return null;
-    } finally {
-      set({ loading: false });
     }
+    // finally {
+    //   set({ loading: false });
+    // }
   },
   updateAccount: async (
     realmId: string,
@@ -432,5 +443,8 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   },
   setKpiPeriod: (range: MonthRange) => {
     set({ kpiPeriod: range });
+  },
+  setKpiFilters: (filters: UsageFilter[]) => {
+    set({ kpiFilters: filters });
   },
 }));

@@ -9,7 +9,7 @@ import {
   isAfter,
   isSameMonth,
 } from "date-fns";
-import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -166,14 +166,40 @@ export default function MonthPicker({
 
   const formatDateDisplay = () => {
     if (currentMode === "single") {
-      return format(date.from as Date, "MMM, yyyy");
+      return date.from?.getFullYear() === new Date().getFullYear()
+        ? format(date.from as Date, "MMMM")
+        : format(date.from as Date, "MMMM, yy");
     } else {
       const range = date as MonthRange;
       if (!range.from) return "Select months";
-      if (!range.to) return `${format(range.from, "MMM, yyyy")} - ...`;
-      return `${format(range.from, "MMM, yyyy")} - ${format(
+
+      let fromFormat = "MMM";
+      let toFormat = "MMM";
+
+      if (range.from.getFullYear() !== new Date().getFullYear()) {
+        fromFormat = "MMM, yy";
+      }
+
+      if (!range.to) return `${format(range.from, fromFormat)} - ...`;
+
+      if (isSameMonth(range.from, range.to)) {
+        return date.from?.getFullYear() === new Date().getFullYear()
+          ? format(date.from as Date, "MMMM")
+          : format(date.from as Date, "MMMM, yy");
+      }
+
+      if (range.from.getFullYear() !== range.to.getFullYear()) {
+        toFormat = "MMM, yy";
+      } else if (
+        range.from.getFullYear() == new Date().getFullYear() &&
+        range.from.getFullYear() === range.to.getFullYear()
+      ) {
+        fromFormat = "MMM";
+        toFormat = "MMM";
+      }
+      return `${format(range.from, fromFormat)} - ${format(
         range.to,
-        "MMM, yyyy"
+        toFormat
       )}`;
     }
   };
@@ -225,11 +251,11 @@ export default function MonthPicker({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-0 border rounded-lg">
       <Button
         variant="ghost"
         size="icon"
-        className="h-10 w-10"
+        className="h-8 w-8"
         disabled={!canNavigatePrev()}
         onClick={() => handleNavigateMonth("prev")}
       >
@@ -240,13 +266,13 @@ export default function MonthPicker({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="ghost"
             className={cn(
-              "w-[220px] justify-start text-left font-normal",
+              "w-[120px] justify-start font-normal h-8 text-center",
               !date && "text-muted-foreground"
             )}
           >
-            <Calendar className="mr-2 h-4 w-4" />
+            {/* <Calendar className="mr-2 h-4 w-4" /> */}
             {formatDateDisplay()}
             {isOpen && (
               <X
@@ -315,7 +341,7 @@ export default function MonthPicker({
       <Button
         variant="ghost"
         size="icon"
-        className="h-10 w-10"
+        className="h-8 w-8"
         disabled={!canNavigateNext()}
         onClick={() => handleNavigateMonth("next")}
       >

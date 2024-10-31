@@ -161,3 +161,8 @@ export interface MonthRange {
   from: Date;
   to: Date;
 }
+export interface UsageFilter {
+  type: "model" | "account";
+  id: string;
+  value?: string;
+}
