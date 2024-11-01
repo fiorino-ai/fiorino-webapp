@@ -26,6 +26,7 @@ import {
   BarChart2,
   ChevronsUpDown,
   Cog,
+  Cpu,
   Lock,
   LogOut,
   PanelLeft,
@@ -193,6 +194,14 @@ export const MainLayout: React.FC = () => {
                   <Link to={"usage"}>
                     <BarChart2 />
                     <span>Usage</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"llm-costs"}>
+                    <Cpu />
+                    <span>LLM costs</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

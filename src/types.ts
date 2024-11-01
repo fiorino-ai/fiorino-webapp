@@ -166,3 +166,25 @@ export interface UsageFilter {
   id: string;
   value?: string;
 }
+
+export interface LLMCostHistory {
+  id: string;
+  price_per_unit: number;
+  unit_type: string;
+  overhead: number;
+  valid_from: Date;
+  valid_to: Date;
+}
+
+export interface LLMCost {
+  id: string;
+  provider_name: string;
+  model_name: string;
+  price_per_unit: number;
+  unit_type: string;
+  overhead: number;
+  valid_from: Date;
+  valid_to: Date;
+  cost_id: string;
+  history: LLMCostHistory[];
+}

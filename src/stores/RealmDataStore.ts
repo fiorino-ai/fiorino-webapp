@@ -13,6 +13,7 @@ import {
   PaginatedResponse,
   MonthRange,
   UsageFilter,
+  LLMCost,
 } from "@/types";
 import { formatDateToISO, getMonthRange } from "@/lib/date";
 
@@ -72,6 +73,8 @@ export interface RealmDataState {
   deleteAccount: (realmId: string, accountId: string) => Promise<void>;
   setKpiPeriod: (range: MonthRange) => void;
   setKpiFilters: (filters: UsageFilter[]) => void;
+  llmCosts: LLMCost[];
+  fetchLLMPricing: (realmId: string) => Promise<void>;
 }
 
 export const useRealmDataStore = create<RealmDataState>((set, get) => ({
@@ -90,6 +93,7 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   loading: false,
   submitting: false,
   error: null,
+  llmCosts: [],
   reset: () =>
     set({
       costKPI: null,
@@ -446,5 +450,33 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   },
   setKpiFilters: (filters: UsageFilter[]) => {
     set({ kpiFilters: filters });
+  },
+  fetchLLMPricing: async (realmId: string) => {
+    set({ loading: true, llmCosts: [], error: null });
+
+    try {
+      const response = await axios.get<LLMCost[]>(
+        `/realms/${realmId}/llm-costs`
+      );
+
+      // Format dates in the response data
+      const formattedCosts = response.data.map((cost) => ({
+        ...cost,
+        valid_from: new Date(cost.valid_from),
+        valid_to: new Date(cost.valid_to),
+        history: cost.history.map((historyItem) => ({
+          ...historyItem,
+          valid_from: new Date(historyItem.valid_from),
+          valid_to: new Date(historyItem.valid_to),
+        })),
+      }));
+
+      set({ llmCosts: formattedCosts });
+    } catch (error) {
+      set({ error: "Failed to fetch LLM pricing. Please try again." });
+      console.error("Fetching llm pricing failed", error);
+    } finally {
+      set({ loading: false });
+    }
   },
 }));
