@@ -14,6 +14,7 @@ import { SettingsScreen } from "./SettingsScreen";
 import { useShallow } from "zustand/react/shallow";
 import { AccountsScreen } from "./AccountsScreen";
 import { LLMCostsScreen } from "./LLMCostsScreen";
+import { DevelopersScreen } from "./DevelopersScreen";
 
 const RedirectToMainPage: React.FC = () => {
   return <Navigate to={`/realms/usage`} />;
@@ -57,6 +58,7 @@ export const Navigation: React.FC = () => {
             <Route path="usage/activity" element={<ActivityUsageScreen />} />
             <Route path="accounts" element={<AccountsScreen />} />
             <Route path="api-keys" element={<ApiKeysScreen />} />
+            <Route path="developers" element={<DevelopersScreen />} />
             <Route path="settings" element={<SettingsScreen />} />
             <Route path="llm-costs" element={<LLMCostsScreen />} />
           </Route>
