@@ -135,10 +135,10 @@ export default function Component() {
       if (!costs[cost.date]) {
         costs[cost.date] = {};
       }
-      costs[cost.date][cost.llm_model_name] = cost.total_cost;
+      costs[cost.date][cost.model_name] = cost.total_cost;
 
-      if (!models.includes(cost.llm_model_name)) {
-        models.push(cost.llm_model_name);
+      if (!models.includes(cost.model_name)) {
+        models.push(cost.model_name);
       }
     }
 
@@ -292,13 +292,13 @@ export default function Component() {
                         key={index}
                         config={{
                           tokens: {
-                            label: model.llm_model_name,
+                            label: model.model_name,
                             color: "hsl(var(--chart-1))",
                           },
                         }}
                       >
                         <h3 className="text-lg font-semibold mb-4">
-                          {model.llm_model_name}
+                          {model.model_name}
                         </h3>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={model.daily_costs}>
@@ -364,7 +364,7 @@ export default function Component() {
                     <TableBody>
                       {(kpi.most_used_models || []).map((usage, index) => (
                         <TableRow key={index}>
-                          <TableCell>{usage.llm_model_name}</TableCell>
+                          <TableCell>{usage.model_name}</TableCell>
                           <TableCell>
                             {usage.total_tokens.toLocaleString()}
                           </TableCell>

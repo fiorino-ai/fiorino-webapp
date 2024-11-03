@@ -177,7 +177,7 @@ export const CostUsageScreen: React.FC = () => {
                   {kpi.llms.map((model, index) => (
                     <Bar
                       key={index}
-                      dataKey={model.llm_model_name}
+                      dataKey={model.model_name}
                       fill={`hsl(var(--chart-${index + 1}))`}
                       stackId="daily-cost"
                     />
@@ -191,12 +191,12 @@ export const CostUsageScreen: React.FC = () => {
                 {kpi.model_costs.map((model, index) => (
                   <div key={index}>
                     <h3 className="text-lg font-semibold mb-4">
-                      {model.llm_model_name}
+                      {model.model_name}
                     </h3>
                     <ChartContainer
                       config={{
                         tokens: {
-                          label: model.llm_model_name,
+                          label: model.model_name,
                         },
                       }}
                     >
@@ -268,7 +268,7 @@ export const CostUsageScreen: React.FC = () => {
                   <TableBody>
                     {(kpi.most_used_models || []).map((usage, index) => (
                       <TableRow key={index}>
-                        <TableCell>{usage.llm_model_name}</TableCell>
+                        <TableCell>{usage.model_name}</TableCell>
                         <TableCell>
                           {usage.total_tokens.toLocaleString()}
                         </TableCell>

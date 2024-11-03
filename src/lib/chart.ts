@@ -41,7 +41,7 @@ export const formatDailyCosts = (
   // Get all unique model names from dailyCosts (if any)
   const modelNames = new Set<string>();
   if (dailyCosts) {
-    dailyCosts.forEach((cost) => modelNames.add(cost.llm_model_name));
+    dailyCosts.forEach((cost) => modelNames.add(cost.model_name));
   }
 
   // Initialize all dates with 0 for each model (or just date if no models)
@@ -59,7 +59,7 @@ export const formatDailyCosts = (
   if (dailyCosts) {
     for (const cost of dailyCosts) {
       if (costs[cost.date]) {
-        costs[cost.date][cost.llm_model_name] = cost.total_cost;
+        costs[cost.date][cost.model_name] = cost.total_cost;
       }
     }
   }

@@ -20,7 +20,7 @@ export interface Realm {
 export interface DailyModelTotalCost {
   date: string;
   provider_name: string;
-  llm_model_name: string;
+  model_name: string;
   total_cost: number;
 }
 
@@ -31,20 +31,20 @@ export interface DailyModelCost {
 
 export interface ModelDailyCost {
   provider_name: string;
-  llm_model_name: string;
+  model_name: string;
   daily_costs: DailyModelCost[];
 }
 
 export interface ModelUsage {
   provider_name: string;
-  llm_model_name: string;
+  model_name: string;
   total_model_price: number;
   total_tokens: number;
 }
 
 export interface LLM {
   provider_name: string;
-  llm_model_name: string;
+  model_name: string;
 }
 
 export interface RealmCostKPI {
@@ -58,12 +58,12 @@ export interface RealmCostKPI {
 
 export interface ChartCostSerie {
   date: string;
-  [llm_model_name: string]: string | number;
+  [model_name: string]: string | number;
 }
 
 export interface ChartCostData {
   [date: string]: {
-    [llm_model_name: string]: number;
+    [model_name: string]: number;
   };
 }
 
@@ -74,7 +74,7 @@ export interface DailyTotalTokens {
 }
 
 export interface ModelDailyTokens {
-  llm_model_name: string;
+  model_name: string;
   data: DailyTotalTokens[];
 }
 

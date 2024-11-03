@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -35,18 +34,39 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
+import { LLMCost } from "@/types";
 
-export default function LLMCostForm() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({
+interface Props {
+  llmCost?: LLMCost;
+  open: boolean;
+  submitting?: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: Partial<LLMCost>) => Promise<void>;
+  onCancel?: () => void;
+}
+
+export default function LLMCostForm({
+  llmCost,
+  open,
+  submitting = false,
+  onOpenChange,
+  onSubmit,
+  onCancel,
+}: Props) {
+  console.log(llmCost);
+
+  const [formData, setFormData] = useState<Partial<LLMCost>>({
     provider_name: "",
-    llm_model_name: "",
+    model_name: "",
     price_per_unit: 0,
     unit_type: "1K",
     overhead: 0,
     valid_from: new Date(),
     valid_to: new Date("2099-12-31"),
   });
+
+  const [searchProvider, setSearchProvider] = useState("");
+  const [searchModel, setSearchModel] = useState("");
 
   const [providerOptions, setProviderOptions] = useState([
     "openai",
@@ -55,10 +75,24 @@ export default function LLMCostForm() {
   const [modelOptions, setModelOptions] = useState({
     openai: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
     anthropic: ["claude-3-sonnet-latest", "claude-3-opus-latest"],
-    "": [], // Add an empty array for when no provider is selected
+    "": [],
   });
 
-  const handleInputChange = (e) => {
+  useEffect(() => {
+    if (llmCost) {
+      setFormData({
+        provider_name: llmCost?.provider_name || "",
+        model_name: llmCost?.model_name || "",
+        price_per_unit: llmCost?.price_per_unit || 0,
+        unit_type: llmCost?.unit_type || "1K",
+        overhead: (llmCost?.overhead || 0) * 100, // Convert to percentage
+        valid_from: llmCost?.valid_from || new Date(),
+        valid_to: llmCost?.valid_to || new Date("2099-12-31"),
+      });
+    }
+  }, [llmCost]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === "price_per_unit" || name === "overhead") {
       const numValue = parseFloat(value);
@@ -67,29 +101,33 @@ export default function LLMCostForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name, value) => {
+  const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === "provider_name") {
-      setFormData((prev) => ({ ...prev, llm_model_name: "" }));
+      setFormData((prev) => ({ ...prev, model_name: "" }));
     }
   };
 
-  const handleDateChange = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleDateChange = (name: string, value: Date | undefined) => {
+    if (value) {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const submissionData = {
       ...formData,
-      overhead: parseFloat(formData.overhead) / 100,
-      price_per_unit: parseFloat(formData.price_per_unit),
+      overhead: parseFloat(formData.overhead?.toString() || "0") / 100,
+      price_per_unit: parseFloat(formData.price_per_unit?.toString() || "0"),
     };
-    console.log("Form submitted:", submissionData);
-    setIsOpen(false);
+    await onSubmit(submissionData);
   };
 
-  const handleCreateOption = (inputValue, type) => {
+  const handleCreateOption = (
+    inputValue: string,
+    type: "provider" | "model"
+  ) => {
     if (type === "provider") {
       setProviderOptions((prev) => [...prev, inputValue]);
       handleSelectChange("provider_name", inputValue);
@@ -97,23 +135,29 @@ export default function LLMCostForm() {
     } else if (type === "model") {
       setModelOptions((prev) => ({
         ...prev,
-        [formData.provider_name]: [
-          ...(prev[formData.provider_name] || []),
+        [String(formData.provider_name)]: [
+          ...(prev[String(formData.provider_name)] || []),
           inputValue,
         ],
       }));
-      handleSelectChange("llm_model_name", inputValue);
+      handleSelectChange("model_name", inputValue);
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+    onOpenChange(false);
+  };
+
+  console.log(formData);
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Add/Edit LLM Cost</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add/Edit LLM Cost</DialogTitle>
+          <DialogTitle>{llmCost ? "Edit" : "Add"} LLM Cost</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -123,29 +167,36 @@ export default function LLMCostForm() {
                 <Button
                   variant="outline"
                   role="combobox"
-                  aria-expanded={isOpen}
                   className="w-full justify-between"
+                  disabled={Boolean(llmCost)}
                 >
                   {formData.provider_name || "Select provider"}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  {!llmCost && (
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
                 <Command>
                   <CommandList>
-                    <CommandInput placeholder="Search provider..." />
+                    <CommandInput
+                      placeholder="Search provider..."
+                      value={searchProvider}
+                      onValueChange={setSearchProvider}
+                    />
                     <CommandEmpty>
                       <Button
                         variant="ghost"
                         className="w-full justify-start"
-                        onClick={() =>
-                          handleCreateOption(formData.provider_name, "provider")
-                        }
+                        onClick={() => {
+                          handleCreateOption(searchProvider, "provider");
+                          setSearchProvider("");
+                        }}
                       >
-                        Create "{formData.provider_name}"
+                        Create "{searchProvider}"
                       </Button>
                     </CommandEmpty>
-                    <CommandGroup>
+                    <CommandGroup key={searchProvider}>
                       {providerOptions.map((option) => (
                         <CommandItem
                           key={option}
@@ -172,47 +223,54 @@ export default function LLMCostForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="llm_model_name">LLM Model Name</Label>
+            <Label htmlFor="model_name">LLM Model Name</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
-                  aria-expanded={isOpen}
                   className="w-full justify-between"
+                  disabled={Boolean(llmCost)}
                 >
-                  {formData.llm_model_name || "Select model"}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  {formData.model_name || "Select model"}
+                  {!llmCost && (
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
                 <Command>
                   <CommandList>
-                    <CommandInput placeholder="Search model..." />
+                    <CommandInput
+                      placeholder="Search model..."
+                      value={searchModel}
+                      onValueChange={setSearchModel}
+                    />
                     <CommandEmpty>
                       <Button
                         variant="ghost"
                         className="w-full justify-start"
-                        onClick={() =>
-                          handleCreateOption(formData.llm_model_name, "model")
-                        }
+                        onClick={() => {
+                          handleCreateOption(searchModel, "model");
+                          setSearchModel("");
+                        }}
                       >
-                        Create "{formData.llm_model_name}"
+                        Create "{searchModel}"
                       </Button>
                     </CommandEmpty>
-                    <CommandGroup>
+                    <CommandGroup key={searchModel}>
                       {(modelOptions[formData.provider_name] || []).map(
                         (option) => (
                           <CommandItem
                             key={option}
                             onSelect={() =>
-                              handleSelectChange("llm_model_name", option)
+                              handleSelectChange("model_name", option)
                             }
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                formData.llm_model_name === option
+                                formData.model_name === option
                                   ? "opacity-100"
                                   : "opacity-0"
                               )}
@@ -244,6 +302,7 @@ export default function LLMCostForm() {
             <Label htmlFor="unit_type">Unit Type</Label>
             <Select
               name="unit_type"
+              value={formData.unit_type}
               onValueChange={(value) => handleSelectChange("unit_type", value)}
             >
               <SelectTrigger>
@@ -293,34 +352,19 @@ export default function LLMCostForm() {
             </Popover>
           </div>
 
-          <div className="space-y-2">
-            <Label>Valid To</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  {formData.valid_to
-                    ? format(formData.valid_to, "PPP")
-                    : "Pick a date"}
-                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.valid_to}
-                  onSelect={(date) => handleDateChange("valid_to", date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {llmCost ? "Update" : "Create"}
+            </Button>
           </div>
-
-          <Button type="submit" className="w-full">
-            Submit
-          </Button>
         </form>
       </DialogContent>
     </Dialog>

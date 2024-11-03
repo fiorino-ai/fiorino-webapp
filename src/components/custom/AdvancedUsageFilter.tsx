@@ -115,9 +115,9 @@ export default function AdvancedUsageFilter({
                         <CommandGroup>
                           {models.map((model) => (
                             <CommandItem
-                              key={model.llm_model_name}
+                              key={model.model_name}
                               onSelect={() => {
-                                addFilter("model", model.llm_model_name);
+                                addFilter("model", model.model_name);
                                 setOpenModel(false);
                               }}
                             >
@@ -127,13 +127,13 @@ export default function AdvancedUsageFilter({
                                   filters.some(
                                     (f) =>
                                       f.type === "model" &&
-                                      f.value === model.llm_model_name
+                                      f.value === model.model_name
                                   )
                                     ? "opacity-100"
                                     : "opacity-0"
                                 )}
                               />
-                              {model.llm_model_name}
+                              {model.model_name}
                             </CommandItem>
                           ))}
                         </CommandGroup>

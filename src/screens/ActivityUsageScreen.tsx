@@ -183,13 +183,13 @@ export const ActivityUsageScreen: React.FC = () => {
                 {kpi.model_daily_tokens.map((model, index) => (
                   <div key={index}>
                     <h3 className="text-lg font-semibold mb-4">
-                      {model.llm_model_name}
+                      {model.model_name}
                     </h3>
                     <ChartContainer
                       key={index}
                       config={{
                         tokens: {
-                          label: model.llm_model_name,
+                          label: model.model_name,
                         },
                       }}
                     >

@@ -75,6 +75,17 @@ export interface RealmDataState {
   setKpiFilters: (filters: UsageFilter[]) => void;
   llmCosts: LLMCost[];
   fetchLLMPricing: (realmId: string) => Promise<void>;
+  createLLMCost: (realmId: string, data: Partial<LLMCost>) => Promise<void>;
+  updateLLMCost: (
+    realmId: string,
+    costId: string,
+    data: Partial<LLMCost>
+  ) => Promise<void>;
+  deleteLLMCost: (
+    realmId: string,
+    costId: string,
+    reopenPreviousPrice: boolean
+  ) => Promise<void>;
 }
 
 export const useRealmDataStore = create<RealmDataState>((set, get) => ({
@@ -477,6 +488,105 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       console.error("Fetching llm pricing failed", error);
     } finally {
       set({ loading: false });
+    }
+  },
+  createLLMCost: async (realmId: string, data: Partial<LLMCost>) => {
+    set({ submitting: true, error: null });
+    try {
+      // Map the data to match API expectations
+      const mappedData = {
+        ...data,
+        model_name: data.model_name, // Map model_name to model_name
+      };
+
+      const response = await axios.post<LLMCost>(
+        `/realms/${realmId}/llm-costs`,
+        mappedData
+      );
+
+      const newCost = {
+        ...response.data,
+        valid_from: new Date(response.data.valid_from),
+        valid_to: new Date(response.data.valid_to),
+        history: response.data.history.map((item) => ({
+          ...item,
+          valid_from: new Date(item.valid_from),
+          valid_to: new Date(item.valid_to),
+        })),
+      };
+
+      set((state) => ({
+        llmCosts: [...state.llmCosts, newCost],
+      }));
+    } catch (error) {
+      set({ error: "Failed to create LLM cost. Please try again." });
+      console.error("Creating LLM cost failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+  },
+
+  updateLLMCost: async (
+    realmId: string,
+    costId: string,
+    data: Partial<LLMCost>
+  ) => {
+    set({ submitting: true, error: null });
+    try {
+      // Map the data to match API expectations
+      const mappedData = {
+        ...data,
+        model_name: data.model_name, // Map model_name to model_name
+      };
+
+      const response = await axios.put<LLMCost>(
+        `/realms/${realmId}/llm-costs/${costId}`,
+        mappedData
+      );
+
+      const updatedCost = {
+        ...response.data,
+        valid_from: new Date(response.data.valid_from),
+        valid_to: new Date(response.data.valid_to),
+        history: response.data.history.map((item) => ({
+          ...item,
+          valid_from: new Date(item.valid_from),
+          valid_to: new Date(item.valid_to),
+        })),
+      };
+
+      set((state) => ({
+        llmCosts: state.llmCosts.map((cost) =>
+          cost.id === costId ? updatedCost : cost
+        ),
+      }));
+    } catch (error) {
+      set({ error: "Failed to update LLM cost. Please try again." });
+      console.error("Updating LLM cost failed", error);
+    } finally {
+      set({ submitting: false });
+    }
+  },
+
+  deleteLLMCost: async (
+    realmId: string,
+    costId: string,
+    reopenPreviousPrice: boolean
+  ) => {
+    set({ submitting: true, error: null });
+    try {
+      await axios.delete(
+        `/realms/${realmId}/llm-costs/${costId}?reopen_previous_price=${reopenPreviousPrice}`
+      );
+
+      set((state) => ({
+        llmCosts: state.llmCosts.filter((cost) => cost.id !== costId),
+      }));
+    } catch (error) {
+      set({ error: "Failed to delete LLM cost. Please try again." });
+      console.error("Deleting LLM cost failed", error);
+    } finally {
+      set({ submitting: false });
     }
   },
 }));
