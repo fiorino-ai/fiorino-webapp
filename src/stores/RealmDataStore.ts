@@ -525,7 +525,6 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ submitting: false });
     }
   },
-
   updateLLMCost: async (
     realmId: string,
     costId: string,

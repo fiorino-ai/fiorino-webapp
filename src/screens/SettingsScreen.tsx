@@ -338,7 +338,7 @@ export const SettingsScreen: React.FC = () => {
                       <TableCell>
                         {new Date(overhead.valid_to).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>${overhead.amount.toFixed(2)}</TableCell>
+                      <TableCell>${overhead.percentage.toFixed(2)}</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"

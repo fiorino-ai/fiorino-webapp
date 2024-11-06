@@ -31,7 +31,9 @@ type Props = {
 export const OverheadFormSchema = z.object({
   valid_from: z.string().min(1, { message: "Valid from date is required" }),
   valid_to: z.string().min(1, { message: "Valid to date is required" }),
-  amount: z.number().min(0, { message: "Amount must be a positive number" }),
+  percentage: z
+    .number()
+    .min(0, { message: "Amount must be a positive number" }),
 });
 
 export const OverheadDialog: React.FC<Props> = ({
@@ -46,7 +48,7 @@ export const OverheadDialog: React.FC<Props> = ({
     defaultValues: overhead || {
       valid_from: "",
       valid_to: "",
-      amount: 0,
+      percentage: 0,
     },
   });
 
@@ -94,7 +96,7 @@ export const OverheadDialog: React.FC<Props> = ({
             />
             <FormField
               control={form.control}
-              name="amount"
+              name="percentage"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Amount</FormLabel>

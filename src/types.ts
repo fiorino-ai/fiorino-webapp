@@ -131,7 +131,7 @@ export interface Overhead {
   id?: string;
   valid_from: string;
   valid_to: string;
-  amount: number;
+  percentage: number;
 }
 
 export interface Account {
