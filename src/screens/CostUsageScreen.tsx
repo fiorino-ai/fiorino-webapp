@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDailyCosts } from "@/lib/chart";
+import { formatDailyCosts, formatSingleModelDailyCosts } from "@/lib/chart";
 import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
@@ -234,7 +234,12 @@ export const CostUsageScreen: React.FC = () => {
                       }}
                     >
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={model.daily_costs}>
+                        <BarChart
+                          data={formatSingleModelDailyCosts(
+                            model.daily_costs,
+                            period
+                          )}
+                        >
                           <XAxis dataKey="date" />
                           <YAxis yAxisId="left" orientation="left" />
                           <ChartTooltip content={<ChartTooltipContent />} />

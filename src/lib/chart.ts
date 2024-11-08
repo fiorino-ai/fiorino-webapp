@@ -1,6 +1,7 @@
 import {
   ChartCostData,
   ChartCostSerie,
+  DailyModelCost,
   DailyModelTotalCost,
   MonthRange,
 } from "@/types";
@@ -23,7 +24,13 @@ function getDatesInRange(start: Date, end: Date): Date[] {
 /**
  * Format a date to YYYY-MM-DD string
  */
-function formatDate(date: Date): string {
+function formatDate(date: Date, format?: string): string {
+  if (format === "MM-DD") {
+    return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate()
+    ).padStart(2, "0")}`;
+  }
+
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -71,4 +78,32 @@ export const formatDailyCosts = (
       date,
       ...costs[date],
     }));
+};
+
+export const formatSingleModelDailyCosts = (
+  dailyModelCosts: DailyModelCost[],
+  period: MonthRange
+): DailyModelCost[] => {
+  // Initialize costs object with all dates in range
+  const filledData: DailyModelCost[] = [];
+  const dates = getDatesInRange(period.from, period.to);
+
+  // Initialize all dates with 0 for each model (or just date if no models)
+  dates.forEach((date) => {
+    const dateStr = formatDate(date);
+    const chartDate = formatDate(date, "MM-DD");
+
+    const cost = (dailyModelCosts || []).find((cost) => cost.date === dateStr);
+
+    if (cost) {
+      filledData.push({ ...cost, date: chartDate });
+    } else {
+      filledData.push({
+        date: chartDate,
+        cost: 0,
+      });
+    }
+  });
+
+  return filledData;
 };
