@@ -19,18 +19,23 @@ import {
   FormMessage,
 } from "../ui/form";
 import { BillLimit } from "@/types";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "../ui/calendar";
+import { useEffect } from "react";
 
 type Props = {
   billLimit?: BillLimit;
   open: boolean;
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: Omit<BillLimit, "id">) => Promise<void>;
+  onSubmit: (values: Partial<BillLimit>) => Promise<void>;
 };
 
 export const BillLimitFormSchema = z.object({
-  valid_from: z.string().min(1, { message: "Valid from date is required" }),
-  valid_to: z.string().min(1, { message: "Valid to date is required" }),
+  id: z.string().optional(),
+  valid_from: z.date(),
   amount: z.number().min(0, { message: "Amount must be a positive number" }),
 });
 
@@ -43,15 +48,27 @@ export const BillLimitDialog: React.FC<Props> = ({
 }) => {
   const form = useForm<z.infer<typeof BillLimitFormSchema>>({
     resolver: zodResolver(BillLimitFormSchema),
-    defaultValues: billLimit || {
-      valid_from: "",
-      valid_to: "",
-      amount: 0,
+    defaultValues: {
+      id: billLimit?.id,
+      valid_from: billLimit?.valid_from || new Date(),
+      amount: billLimit?.amount || 0,
     },
   });
 
+  useEffect(() => {
+    form.reset({
+      id: billLimit?.id,
+      valid_from: billLimit?.valid_from || new Date(),
+      amount: billLimit?.amount || 0,
+    });
+  }, [billLimit, form.reset]);
+
   function handleSubmit(values: z.infer<typeof BillLimitFormSchema>) {
-    onSubmit(values);
+    onSubmit({
+      id: values.id,
+      valid_from: new Date(values.valid_from),
+      amount: values.amount,
+    });
     form.reset();
   }
 
@@ -73,25 +90,35 @@ export const BillLimitDialog: React.FC<Props> = ({
                 <FormItem>
                   <FormLabel>Valid From</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) =>
+                            form.setValue("valid_from", date || new Date())
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="valid_to"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valid To</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="amount"

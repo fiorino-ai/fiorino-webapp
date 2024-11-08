@@ -14,6 +14,8 @@ import {
   MonthRange,
   UsageFilter,
   LLMCost,
+  UsageLog,
+  UsageLogsResponse,
 } from "@/types";
 import { formatDateToISO, getMonthRange } from "@/lib/date";
 
@@ -23,7 +25,7 @@ export interface RealmDataState {
   kpiPeriod: MonthRange;
   kpiFilters: UsageFilter[];
   apiKeys: ApiKey[];
-  billLimits: BillLimit[];
+  billLimits: BillLimit | null;
   loading: boolean;
   submitting: boolean;
   error: string | null;
@@ -39,19 +41,20 @@ export interface RealmDataState {
   ) => Promise<void>;
   deleteApiKey: (realmId: string, apiKeyId: string) => Promise<void>;
   fetchBillLimits: (realmId: string) => Promise<void>;
-  createBillLimit: (
-    realmId: string,
-    data: BillLimit
-  ) => Promise<BillLimit | null>;
+  createBillLimit: (realmId: string, data: Partial<BillLimit>) => Promise<void>;
   updateBillLimit: (
     realmId: string,
     billLimitId: string,
     data: Partial<BillLimit>
   ) => Promise<void>;
-  deleteBillLimit: (realmId: string, billLimitId: string) => Promise<void>;
-  overheads: Overhead[];
-  fetchOverheads: (realmId: string) => Promise<void>;
-  createOverhead: (realmId: string, data: Overhead) => Promise<Overhead | null>;
+  deleteBillLimit: (
+    realmId: string,
+    billLimitId: string,
+    reopenPreviousPrice: boolean
+  ) => Promise<void>;
+  overhead: Overhead | null;
+  fetchOverhead: (realmId: string) => Promise<void>;
+  createOverhead: (realmId: string, data: Partial<Overhead>) => Promise<void>;
   updateOverhead: (
     realmId: string,
     overheadId: string,
@@ -86,6 +89,13 @@ export interface RealmDataState {
     costId: string,
     reopenPreviousPrice: boolean
   ) => Promise<void>;
+  logs: UsageLog[];
+  logsTotal: number;
+  logsHasMore: boolean;
+  logsLoading: boolean;
+  logsError: string | null;
+  fetchLogs: (realmId: string, reset?: boolean) => Promise<void>;
+  resetLogs: () => void;
 }
 
 export const useRealmDataStore = create<RealmDataState>((set, get) => ({
@@ -94,8 +104,8 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   kpiPeriod: getMonthRange(new Date()),
   kpiFilters: [],
   apiKeys: [],
-  billLimits: [],
-  overheads: [],
+  billLimits: null,
+  overhead: null,
   accounts: [],
   accountsTotal: 0,
   accountsPage: 1,
@@ -105,14 +115,24 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   submitting: false,
   error: null,
   llmCosts: [],
+  logs: [],
+  logsTotal: 0,
+  logsHasMore: true,
+  logsLoading: false,
+  logsError: null,
   reset: () =>
     set({
       costKPI: null,
       activityKPI: null,
       apiKeys: [],
-      billLimits: [],
+      billLimits: null,
       accounts: [],
-      overheads: [],
+      overhead: null,
+      logs: [],
+      logsTotal: 0,
+      logsHasMore: true,
+      logsLoading: false,
+      logsError: null,
     }),
   fetchCostKPI: async (realmId: string) => {
     const { kpiPeriod, kpiFilters } = get();
@@ -238,10 +258,26 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   fetchBillLimits: async (realmId: string) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.get<BillLimit[]>(
+      const response = await axios.get<BillLimit>(
         `/realms/${realmId}/bill-limits`
       );
-      set({ billLimits: response.data });
+
+      const formattedLimits = {
+        ...response.data,
+        valid_from: new Date(response.data.valid_from),
+        valid_to: response.data.valid_to
+          ? new Date(response.data.valid_to)
+          : null,
+        history: response.data.history.map((historyItem) => ({
+          ...historyItem,
+          valid_from: new Date(historyItem.valid_from),
+          valid_to: historyItem.valid_to
+            ? new Date(historyItem.valid_to)
+            : null,
+        })),
+      };
+
+      set({ billLimits: formattedLimits });
     } catch (error) {
       set({ error: "Failed to fetch bill limits. Please try again." });
       console.error("Fetching bill limits failed", error);
@@ -249,23 +285,26 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ loading: false });
     }
   },
-  createBillLimit: async (realmId: string, data: BillLimit) => {
+  createBillLimit: async (realmId: string, data: Partial<BillLimit>) => {
     set({ submitting: true, error: null });
-    let newBillLimit: BillLimit | null = null;
     try {
-      const response = await axios.post<BillLimit>(
-        `/realms/${realmId}/bill-limits`,
-        data
-      );
-      newBillLimit = response.data;
-      set((state) => ({ billLimits: [...state.billLimits, newBillLimit!] }));
+      // Set time components to zero for valid_from
+      const validFrom = new Date(data.valid_from!);
+      validFrom.setHours(0, 0, 0, 0);
+
+      const payload = {
+        ...data,
+        valid_from: validFrom,
+      };
+
+      await axios.post<BillLimit>(`/realms/${realmId}/bill-limits`, payload);
+      await get().fetchBillLimits(realmId);
     } catch (error) {
       set({ error: "Failed to create bill limit. Please try again." });
       console.error("Creating bill limit failed", error);
     } finally {
       set({ submitting: false });
     }
-    return newBillLimit;
   },
   updateBillLimit: async (
     realmId: string,
@@ -274,15 +313,11 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   ) => {
     set({ submitting: true, error: null });
     try {
-      const response = await axios.put<BillLimit>(
+      await axios.put<BillLimit>(
         `/realms/${realmId}/bill-limits/${billLimitId}`,
         data
       );
-      set((state) => ({
-        billLimits: state.billLimits.map((billLimit) =>
-          billLimit.id === billLimitId ? response.data : billLimit
-        ),
-      }));
+      get().fetchBillLimits(realmId);
     } catch (error) {
       set({ error: "Failed to update bill limit. Please try again." });
       console.error("Updating bill limit failed", error);
@@ -290,15 +325,17 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ submitting: false });
     }
   },
-  deleteBillLimit: async (realmId: string, billLimitId: string) => {
+  deleteBillLimit: async (
+    realmId: string,
+    billLimitId: string,
+    reopenPreviousPrice: boolean
+  ) => {
     set({ submitting: true, error: null });
     try {
-      await axios.delete(`/realms/${realmId}/bill-limits/${billLimitId}`);
-      set((state) => ({
-        billLimits: state.billLimits.filter(
-          (billLimit) => billLimit.id !== billLimitId
-        ),
-      }));
+      await axios.delete(
+        `/realms/${realmId}/bill-limits/${billLimitId}?reopen_previous_price=${reopenPreviousPrice}`
+      );
+      await get().fetchBillLimits(realmId);
     } catch (error) {
       set({ error: "Failed to delete bill limit. Please try again." });
       console.error("Deleting bill limit failed", error);
@@ -306,37 +343,54 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ submitting: false });
     }
   },
-  fetchOverheads: async (realmId: string) => {
+  fetchOverhead: async (realmId: string) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.get<Overhead[]>(
+      const response = await axios.get<Overhead>(
         `/realms/${realmId}/overheads`
       );
-      set({ overheads: response.data });
+
+      const formattedOverhead = {
+        ...response.data,
+        valid_from: new Date(response.data.valid_from),
+        valid_to: response.data.valid_to
+          ? new Date(response.data.valid_to)
+          : null,
+        history: response.data.history.map((item) => ({
+          ...item,
+          valid_from: new Date(item.valid_from),
+          valid_to: item.valid_to ? new Date(item.valid_to) : null,
+        })),
+      };
+
+      set({ overhead: formattedOverhead });
     } catch (error) {
-      set({ error: "Failed to fetch overheads. Please try again." });
-      console.error("Fetching overheads failed", error);
+      set({ error: "Failed to fetch overhead. Please try again." });
+      console.error("Fetching overhead failed", error);
     } finally {
       set({ loading: false });
     }
   },
-  createOverhead: async (realmId: string, data: Overhead) => {
+  createOverhead: async (realmId: string, data: Partial<Overhead>) => {
     set({ submitting: true, error: null });
-    let newOverhead: Overhead | null = null;
     try {
-      const response = await axios.post<Overhead>(
-        `/realms/${realmId}/overheads`,
-        data
-      );
-      newOverhead = response.data;
-      set((state) => ({ overheads: [...state.overheads, newOverhead!] }));
+      // Set time components to zero for valid_from
+      const validFrom = new Date(data.valid_from!);
+      validFrom.setHours(0, 0, 0, 0);
+
+      const payload = {
+        ...data,
+        valid_from: validFrom,
+      };
+
+      await axios.post<Overhead>(`/realms/${realmId}/overheads`, payload);
+      await get().fetchOverhead(realmId);
     } catch (error) {
       set({ error: "Failed to create overhead. Please try again." });
       console.error("Creating overhead failed", error);
     } finally {
       set({ submitting: false });
     }
-    return newOverhead;
   },
   updateOverhead: async (
     realmId: string,
@@ -345,15 +399,11 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
   ) => {
     set({ submitting: true, error: null });
     try {
-      const response = await axios.put<Overhead>(
+      await axios.put<Overhead>(
         `/realms/${realmId}/overheads/${overheadId}`,
         data
       );
-      set((state) => ({
-        overheads: state.overheads.map((overhead) =>
-          overhead.id === overheadId ? response.data : overhead
-        ),
-      }));
+      await get().fetchOverhead(realmId);
     } catch (error) {
       set({ error: "Failed to update overhead. Please try again." });
       console.error("Updating overhead failed", error);
@@ -365,11 +415,7 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
     set({ submitting: true, error: null });
     try {
       await axios.delete(`/realms/${realmId}/overheads/${overheadId}`);
-      set((state) => ({
-        overheads: state.overheads.filter(
-          (overhead) => overhead.id !== overheadId
-        ),
-      }));
+      await get().fetchOverhead(realmId);
     } catch (error) {
       set({ error: "Failed to delete overhead. Please try again." });
       console.error("Deleting overhead failed", error);
@@ -566,7 +612,6 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       set({ submitting: false });
     }
   },
-
   deleteLLMCost: async (
     realmId: string,
     costId: string,
@@ -587,5 +632,55 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
     } finally {
       set({ submitting: false });
     }
+  },
+  fetchLogs: async (realmId: string, reset: boolean = false) => {
+    const state = get();
+
+    // Don't fetch if we're already loading or if we have no more data
+    if (state.logsLoading || (!reset && !state.logsHasMore)) {
+      return;
+    }
+
+    const limit = 20; // Number of logs per request
+    const skip = reset ? 0 : state.logs.length;
+
+    set({
+      logsLoading: true,
+      logsError: null,
+      ...(reset ? { logs: [], logsHasMore: true } : {}),
+    });
+
+    try {
+      const response = await axios.get<UsageLogsResponse>(
+        `/realms/${realmId}/usage/logs?skip=${skip}&limit=${limit}`
+      );
+
+      const formattedLogs = response.data.logs.map((log) => ({
+        ...log,
+        created_at: new Date(log.created_at),
+      }));
+
+      set((state) => ({
+        logs: reset ? formattedLogs : [...state.logs, ...formattedLogs],
+        logsTotal: response.data.total,
+        logsHasMore: response.data.has_more,
+      }));
+    } catch (error) {
+      set({
+        logsError: "Failed to fetch usage logs. Please try again.",
+        logsHasMore: false,
+      });
+      console.error("Fetching usage logs failed", error);
+    } finally {
+      set({ logsLoading: false });
+    }
+  },
+  resetLogs: () => {
+    set({
+      logs: [],
+      logsTotal: 0,
+      logsHasMore: true,
+      logsError: null,
+    });
   },
 }));

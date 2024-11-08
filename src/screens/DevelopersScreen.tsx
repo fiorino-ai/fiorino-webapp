@@ -1,119 +1,104 @@
 "use client";
 
 import {
-  Globe,
-  Plus,
   Copy,
   Key,
   ChevronDown,
   ChevronRight,
+  LoaderCircle,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-// import { useToast } from "@/components/ui/use-toast";
+import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
+import { useShallow } from "zustand/react/shallow";
+import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
+import { UsageLog } from "@/types";
 
-type RequestData = {
-  id: string;
-  status: string;
-  method: string;
-  endpoint: string;
-  time: string;
-  date: string;
-  apiVersion: string;
-  source: string;
-  idempotencyKey: string;
-  origin: string;
-  ipAddress: string;
-  responseBody: string;
+const realmDataSelector = (state: RealmDataState) => ({
+  logs: state.logs,
+  logsTotal: state.logsTotal,
+  logsHasMore: state.logsHasMore,
+  logsLoading: state.logsLoading,
+  fetchLogs: state.fetchLogs,
+  resetLogs: state.resetLogs,
+});
+
+const realmsSelector = (state: RealmsState) => ({
+  activeRealm: state.activeRealm,
+});
+
+type GroupedLogs = {
+  [date: string]: UsageLog[];
 };
 
-const mockData: RequestData[] = [
-  {
-    id: "req_1",
-    status: "200 OK",
-    method: "POST",
-    endpoint: "/v1/promotion_codes",
-    time: "17:47:42",
-    date: "28 OCT 2024",
-    apiVersion: "2023-08-16",
-    source: "Dashboard – root@themostaza.com",
-    idempotencyKey: "e671b9dc-4a8c-4742-8529-e78cbdcd1f58",
-    origin: "https://dashboard.example.com",
-    ipAddress: "93.149.221.62",
-    responseBody: JSON.stringify(
-      {
-        id: "promo_1QEw6UJCE5bTdo5crVm46Txu",
-        object: "promotion_code",
-        active: true,
-        code: "GZYINFHN",
-      },
-      null,
-      2
-    ),
-  },
-  {
-    id: "req_2",
-    status: "200 OK",
-    method: "POST",
-    endpoint: "/v1/coupons",
-    time: "17:46:58",
-    date: "28 OCT 2024",
-    apiVersion: "2023-08-16",
-    source: "Dashboard – root@themostaza.com",
-    idempotencyKey: "a123b456-7890-4742-8529-e78cbdcd1f58",
-    origin: "https://dashboard.example.com",
-    ipAddress: "93.149.221.62",
-    responseBody: JSON.stringify(
-      {
-        id: "coup_1QEw6UJCE5bTdo5crVm46Txu",
-        object: "coupon",
-        active: true,
-      },
-      null,
-      2
-    ),
-  },
-  {
-    id: "req_3",
-    status: "200 OK",
-    method: "POST",
-    endpoint: "/v1/pricing_tables/prctbl_1PiZVPJCE5",
-    time: "18:07:16",
-    date: "1 AUG 2024",
-    apiVersion: "2023-08-16",
-    source: "Dashboard – root@themostaza.com",
-    idempotencyKey: "c789d012-3456-4742-8529-e78cbdcd1f58",
-    origin: "https://dashboard.example.com",
-    ipAddress: "93.149.221.62",
-    responseBody: JSON.stringify(
-      {
-        id: "prctbl_1PiZVPJCE5",
-        object: "pricing_table",
-        active: true,
-      },
-      null,
-      2
-    ),
-  },
-];
+// Add this helper function to determine badge variant
+const getBadgeVariant = (statusCode: number) => {
+  if (statusCode >= 200 && statusCode < 300) return "default";
+  if (statusCode >= 400) return "destructive";
+  return "secondary";
+};
 
 export const DevelopersScreen: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  // const { toast } = useToast()
+  const { activeRealm } = useRealmsStore(useShallow(realmsSelector));
+  const { logs, logsHasMore, logsLoading, fetchLogs, resetLogs } =
+    useRealmDataStore(useShallow(realmDataSelector));
+
+  const observer = useRef<IntersectionObserver>();
+  const lastLogElementRef = useCallback(
+    (node: HTMLDivElement) => {
+      if (logsLoading) return;
+
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && logsHasMore) {
+          fetchLogs(activeRealm!.id);
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [logsLoading, logsHasMore]
+  );
+
+  useEffect(() => {
+    if (activeRealm?.id) {
+      resetLogs();
+      fetchLogs(activeRealm.id, true);
+    }
+  }, [activeRealm, selectedTab]);
+
+  const filteredAndGroupedLogs = useMemo(() => {
+    const filteredLogs = logs.filter((log) => {
+      if (selectedTab === "all") return true;
+      if (selectedTab === "succeeded")
+        return log.status_code >= 200 && log.status_code < 300;
+      if (selectedTab === "failed") return log.status_code >= 400;
+      return true;
+    });
+
+    return filteredLogs.reduce((acc: GroupedLogs, log) => {
+      const date = new Date(log.created_at)
+        .toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+        .toUpperCase();
+
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(log);
+      return acc;
+    }, {});
+  }, [logs, selectedTab]);
 
   const toggleRow = (id: string) => {
     const newExpandedRows = new Set(expandedRows);
@@ -142,19 +127,10 @@ export const DevelopersScreen: React.FC = () => {
   -d '{"metric": "example_metric", "value": 1}'`;
 
   const loadMore = async () => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setLoading(false);
-  };
-
-  // Group requests by date
-  const groupedRequests = mockData.reduce((acc, request) => {
-    if (!acc[request.date]) {
-      acc[request.date] = [];
+    if (logsHasMore) {
+      fetchLogs(activeRealm!.id);
     }
-    acc[request.date].push(request);
-    return acc;
-  }, {} as Record<string, RequestData[]>);
+  };
 
   return (
     <>
@@ -178,12 +154,12 @@ export const DevelopersScreen: React.FC = () => {
                 Use this endpoint to track metrics in your application. Set the
                 API Key in the "X-API-Key" header.
               </p>
-              <Button className="mt-4" variant="outline" asChild>
+              {/* <Button className="mt-4" variant="outline" asChild>
                 <a href="/generate-api-key">
                   <Key className="w-4 h-4 mr-2" />
                   Generate New API Key
                 </a>
-              </Button>
+              </Button> */}
             </CardContent>
           </Card>
 
@@ -210,13 +186,6 @@ export const DevelopersScreen: React.FC = () => {
 
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold">Request History</h2>
-            <div className="flex gap-2">
-              <Button variant="outline">Import test endpoints · 1</Button>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add endpoint
-              </Button>
-            </div>
           </div>
 
           <div className="container py-6 space-y-6">
@@ -230,177 +199,144 @@ export const DevelopersScreen: React.FC = () => {
                 <TabsTrigger value="succeeded">Succeeded</TabsTrigger>
                 <TabsTrigger value="failed">Failed</TabsTrigger>
               </TabsList>
-              <div className="flex items-center gap-2 my-4">
-                <Input
-                  placeholder="Filter by resource ID..."
-                  className="max-w-xs"
-                />
-                <Button variant="outline">Date</Button>
-                <Button variant="outline">Status</Button>
-                <Button variant="outline">Method</Button>
-                <Button variant="outline">API endpoint</Button>
-                <Button variant="outline">More...</Button>
-                <Button variant="ghost" className="ml-auto">
-                  Clear all
-                </Button>
-              </div>
-              <TabsContent value="all">
+              <TabsContent value={selectedTab}>
                 <div className="space-y-6">
-                  {Object.entries(groupedRequests).map(([date, requests]) => (
-                    <div key={date} className="space-y-2">
-                      <h3 className="text-lg font-semibold">{date}</h3>
-                      <div className="space-y-1">
-                        {requests.map((request) => (
-                          <div key={request.id}>
+                  {Object.entries(filteredAndGroupedLogs).map(
+                    ([date, logs], groupIndex) => (
+                      <div key={date} className="space-y-2">
+                        <h3 className="text-lg font-semibold">{date}</h3>
+                        <div className="space-y-1">
+                          {logs.map((log, index) => (
                             <div
-                              className="flex items-center px-4 py-2 hover:bg-muted/50 rounded-lg cursor-pointer"
-                              onClick={() => toggleRow(request.id)}
+                              key={log.id}
+                              ref={
+                                groupIndex ===
+                                  Object.keys(filteredAndGroupedLogs).length -
+                                    1 && index === logs.length - 1
+                                  ? lastLogElementRef
+                                  : undefined
+                              }
                             >
-                              <button className="mr-2">
-                                {expandedRows.has(request.id) ? (
-                                  <ChevronDown className="w-4 h-4" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4" />
-                                )}
-                              </button>
-                              <Badge
-                                // variant={
-                                //   request.status === "200 OK"
-                                //     ? "success"
-                                //     : "destructive"
-                                // }
-                                className="w-20 justify-center"
+                              <div
+                                className="flex items-center px-4 py-2 hover:bg-muted/50 rounded-lg cursor-pointer"
+                                onClick={() => toggleRow(log.id)}
                               >
-                                {request.status}
-                              </Badge>
-                              <span className="ml-4 font-mono">
-                                {request.method}
-                              </span>
-                              <span className="ml-4 font-mono text-muted-foreground">
-                                {request.endpoint}
-                              </span>
-                              <span className="ml-auto font-mono text-muted-foreground">
-                                {request.time}
-                              </span>
-                            </div>
-                            {expandedRows.has(request.id) && (
-                              <div className="ml-10 mt-2 p-4 bg-muted/30 rounded-lg">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h4 className="font-medium mb-4">
-                                      Request Details
-                                    </h4>
-                                    <dl className="space-y-2">
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">ID:</dt>
-                                        <dd className="text-muted-foreground">
-                                          {request.id}
-                                        </dd>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">Time:</dt>
-                                        <dd className="text-muted-foreground">{`${request.date} ${request.time}`}</dd>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">
-                                          IP Address:
-                                        </dt>
-                                        <dd className="text-muted-foreground">
-                                          {request.ipAddress}
-                                        </dd>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">
-                                          API Version:
-                                        </dt>
-                                        <dd className="text-muted-foreground">
-                                          {request.apiVersion}
-                                          <Badge
-                                            variant="secondary"
-                                            className="ml-2"
-                                          >
-                                            Latest
-                                          </Badge>
-                                        </dd>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">Source:</dt>
-                                        <dd className="text-muted-foreground">
-                                          {request.source}
-                                        </dd>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">
-                                          Idempotency:
-                                        </dt>
-                                        <dd className="text-muted-foreground">
-                                          {request.idempotencyKey}
-                                        </dd>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <dt className="font-medium">Origin:</dt>
-                                        <dd className="text-muted-foreground">
-                                          {request.origin}
-                                        </dd>
-                                      </div>
-                                    </dl>
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center justify-between mb-4">
-                                      <h4 className="font-medium">
-                                        Response Body
+                                <button className="mr-2">
+                                  {expandedRows.has(log.id) ? (
+                                    <ChevronDown className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4" />
+                                  )}
+                                </button>
+                                <Badge
+                                  variant={getBadgeVariant(log.status_code)}
+                                  className="w-20 justify-center"
+                                >
+                                  {log.status_code}
+                                </Badge>
+                                <span className="ml-4 font-mono">
+                                  {log.method}
+                                </span>
+                                <span className="ml-4 font-mono text-muted-foreground">
+                                  {log.path}
+                                </span>
+                                <span className="ml-auto font-mono text-muted-foreground">
+                                  {new Date(
+                                    log.created_at
+                                  ).toLocaleTimeString()}
+                                </span>
+                              </div>
+                              {expandedRows.has(log.id) && (
+                                <div className="ml-10 mt-2 p-4 bg-muted/30 rounded-lg">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-medium mb-4">
+                                        Request Details
                                       </h4>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyToClipboard(request.responseBody);
-                                        }}
-                                      >
-                                        <Copy className="w-4 h-4" />
-                                      </Button>
+                                      <dl className="space-y-2">
+                                        <div className="flex gap-2">
+                                          <dt className="font-medium">ID:</dt>
+                                          <dd className="text-muted-foreground">
+                                            {log.id}
+                                          </dd>
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <dt className="font-medium">Time:</dt>
+                                          <dd className="text-muted-foreground">
+                                            {new Date(
+                                              log.created_at
+                                            ).toLocaleString()}
+                                          </dd>
+                                        </div>
+                                        {log.origin && (
+                                          <div className="flex gap-2">
+                                            <dt className="font-medium">
+                                              Origin:
+                                            </dt>
+                                            <dd className="text-muted-foreground">
+                                              {log.origin}
+                                            </dd>
+                                          </div>
+                                        )}
+                                      </dl>
                                     </div>
-                                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-                                      <code>{request.responseBody}</code>
-                                    </pre>
+                                    <div>
+                                      <div className="flex items-center justify-between mb-4">
+                                        <h4 className="font-medium">
+                                          Response Body
+                                        </h4>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            copyToClipboard(
+                                              JSON.stringify(
+                                                log.response_body,
+                                                null,
+                                                2
+                                              )
+                                            );
+                                          }}
+                                        >
+                                          <Copy className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                                        <code>
+                                          {JSON.stringify(
+                                            log.response_body,
+                                            null,
+                                            2
+                                          )}
+                                        </code>
+                                      </pre>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
+                    )
+                  )}
+                  {logsHasMore && (
+                    <div className="pt-4">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={loadMore}
+                        disabled={logsLoading}
+                      >
+                        {logsLoading ? "Loading..." : "Load more"}
+                      </Button>
                     </div>
-                  ))}
-                  <div className="pt-4">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={loadMore}
-                      disabled={loading}
-                    >
-                      {loading ? "Loading..." : "Load more"}
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
           </div>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Globe className="w-4 h-4" />
-                  https://api.yourdomain.com
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Your API base URL</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </div>
     </>

@@ -54,6 +54,10 @@ export interface RealmCostKPI {
   total_cost: number;
   total_usage_fees: number;
   llms: LLM[];
+  budget: {
+    current_budget: number;
+    budget_usage_percentage: number;
+  };
 }
 
 export interface ChartCostSerie {
@@ -120,18 +124,36 @@ export interface ApiKey {
 export type NewApiKey = Pick<ApiKey, "name">;
 export type EditedApiKey = Pick<ApiKey, "name" | "is_disabled">;
 
-export interface BillLimit {
-  id?: string;
-  valid_from: string;
-  valid_to: string;
+export interface BillLimitHistory {
+  id: string;
   amount: number;
+  valid_from: Date;
+  valid_to: Date | null;
+}
+
+export interface BillLimit {
+  id: string;
+  amount: number;
+  valid_from: Date;
+  valid_to: Date | null;
+  realm_id: string;
+  history: BillLimitHistory[];
+}
+
+export interface OverheadHistory {
+  id: string;
+  percentage: number;
+  valid_from: Date;
+  valid_to: Date | null;
 }
 
 export interface Overhead {
-  id?: string;
-  valid_from: string;
-  valid_to: string;
+  id: string;
   percentage: number;
+  valid_from: Date;
+  valid_to: Date | null;
+  realm_id: string;
+  history: OverheadHistory[];
 }
 
 export interface Account {
@@ -187,4 +209,47 @@ export interface LLMCost {
   valid_to: Date;
   cost_id: string;
   history: LLMCostHistory[];
+}
+
+export interface UsageLogRequest {
+  realm_id: string;
+  external_id: string;
+  input_tokens: number;
+  output_tokens: number;
+  provider_name: string;
+  llm_model_name: string;
+}
+
+export interface UsageLogResponse {
+  usage: {
+    id: number;
+    realm_id: string;
+    account_id: string;
+    api_key_id: string;
+    created_at: string;
+    llm_cost_id: string;
+    total_price: number;
+    input_tokens: number;
+    total_tokens: number;
+    output_tokens: number;
+    total_model_price: number;
+  };
+  message: string;
+}
+
+export interface UsageLog {
+  id: string;
+  path: string;
+  method: string;
+  status_code: number;
+  origin: string | null;
+  request_body: UsageLogRequest;
+  response_body: UsageLogResponse;
+  created_at: Date;
+}
+
+export interface UsageLogsResponse {
+  logs: UsageLog[];
+  total: number;
+  has_more: boolean;
 }

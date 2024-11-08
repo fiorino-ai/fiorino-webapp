@@ -27,19 +27,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { BillLimitDialog } from "@/components/custom/BillLimitDialog";
 import { OverheadDialog } from "@/components/custom/OverheadDialog";
 import { BillLimit, Overhead } from "@/types";
-import { Pencil, Plus, Trash } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { BillLimitsTable } from "@/components/custom/BillLimitsTable";
+import { OverheadsTable } from "@/components/custom/OverheadsTable";
+import { DeleteBillLimitDialog } from "@/components/custom/DeleteBillLimitDialog";
+import { DeleteOverheadDialog } from "@/components/custom/DeleteOverheadDialog";
 
 const realmsSelector = (state: RealmsState) => ({
   activeRealm: state.activeRealm,
@@ -50,9 +46,9 @@ const realmsSelector = (state: RealmsState) => ({
 
 const realmDataSelector = (state: RealmDataState) => ({
   billLimits: state.billLimits,
-  overheads: state.overheads,
+  overhead: state.overhead,
   fetchBillLimits: state.fetchBillLimits,
-  fetchOverheads: state.fetchOverheads,
+  fetchOverhead: state.fetchOverhead,
   createBillLimit: state.createBillLimit,
   updateBillLimit: state.updateBillLimit,
   deleteBillLimit: state.deleteBillLimit,
@@ -69,6 +65,13 @@ const UpdateRealmFormSchema = z.object({
   }),
 });
 
+const isRecordActive = (validFrom: Date, validTo: Date | null) => {
+  console.log(validFrom, validTo);
+  const now = new Date();
+  const farFuture = new Date("2099-12-31");
+  return validFrom <= now && (validTo === null || validTo >= farFuture);
+};
+
 export const SettingsScreen: React.FC = () => {
   const {
     activeRealm,
@@ -78,9 +81,9 @@ export const SettingsScreen: React.FC = () => {
   } = useRealmsStore(useShallow(realmsSelector));
   const {
     billLimits,
-    overheads,
+    overhead,
     fetchBillLimits,
-    fetchOverheads,
+    fetchOverhead,
     createBillLimit,
     updateBillLimit,
     deleteBillLimit,
@@ -97,6 +100,10 @@ export const SettingsScreen: React.FC = () => {
     null
   );
   const [currentOverhead, setCurrentOverhead] = useState<Overhead | null>(null);
+  const [isDeleteBillLimitDialogOpen, setIsDeleteBillLimitDialogOpen] =
+    useState(false);
+  const [isDeleteOverheadDialogOpen, setIsDeleteOverheadDialogOpen] =
+    useState(false);
 
   const form = useForm<z.infer<typeof UpdateRealmFormSchema>>({
     resolver: zodResolver(UpdateRealmFormSchema),
@@ -111,7 +118,7 @@ export const SettingsScreen: React.FC = () => {
         fetchBillLimits(activeRealm.id);
       }
       if (activeRealm.overhead_enabled) {
-        fetchOverheads(activeRealm.id);
+        fetchOverhead(activeRealm.id);
       }
     }
   }, [
@@ -152,7 +159,7 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleBillLimitSubmit = async (values: Omit<BillLimit, "id">) => {
+  const handleBillLimitSubmit = async (values: Partial<BillLimit>) => {
     if (activeRealm) {
       if (currentBillLimit) {
         await updateBillLimit(activeRealm.id, currentBillLimit.id!, values);
@@ -165,14 +172,25 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleDeleteBillLimit = async (billLimitId: string) => {
-    if (activeRealm) {
-      await deleteBillLimit(activeRealm.id, billLimitId);
-      fetchBillLimits(activeRealm.id);
+  const handleDeleteBillLimit = async (reopenPreviousPrice: boolean) => {
+    if (!currentBillLimit || !activeRealm) return;
+
+    try {
+      await deleteBillLimit(
+        activeRealm.id,
+        currentBillLimit.id,
+        reopenPreviousPrice
+      );
+      setIsDeleteBillLimitDialogOpen(false);
+      setCurrentBillLimit(null);
+      // Refresh the list after successful deletion
+      await fetchBillLimits(activeRealm.id);
+    } catch (error) {
+      console.error("Failed to delete bill limit:", error);
     }
   };
 
-  const handleOverheadSubmit = async (values: Omit<Overhead, "id">) => {
+  const handleOverheadSubmit = async (values: Partial<Overhead>) => {
     if (activeRealm) {
       if (currentOverhead) {
         await updateOverhead(activeRealm.id, currentOverhead.id!, values);
@@ -181,16 +199,30 @@ export const SettingsScreen: React.FC = () => {
       }
       setIsOverheadDialogOpen(false);
       setCurrentOverhead(null);
-      fetchOverheads(activeRealm.id);
+      fetchOverhead(activeRealm.id);
     }
   };
 
-  const handleDeleteOverhead = async (overheadId: string) => {
-    if (activeRealm) {
-      await deleteOverhead(activeRealm.id, overheadId);
-      fetchOverheads(activeRealm.id);
+  const handleDeleteOverhead = async () => {
+    if (!currentOverhead || !activeRealm) return;
+
+    try {
+      await deleteOverhead(activeRealm.id, currentOverhead.id);
+      setIsDeleteOverheadDialogOpen(false);
+      setCurrentOverhead(null);
+      // Refresh the list after successful deletion
+      await fetchOverhead(activeRealm.id);
+    } catch (error) {
+      console.error("Failed to delete overhead:", error);
     }
   };
+
+  const hasActiveBillLimit =
+    billLimits && isRecordActive(billLimits.valid_from, billLimits.valid_to);
+  const hasActiveOverhead =
+    overhead && isRecordActive(overhead.valid_from, overhead.valid_to);
+
+  console.log(hasActiveBillLimit, hasActiveOverhead);
 
   if (!activeRealm) {
     return <div>No active realm selected.</div>;
@@ -251,51 +283,24 @@ export const SettingsScreen: React.FC = () => {
           </div>
           {activeRealm.bill_limit_enabled && (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Valid From</TableHead>
-                    <TableHead>Valid To</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {billLimits.map((billLimit) => (
-                    <TableRow key={billLimit.id}>
-                      <TableCell>
-                        {new Date(billLimit.valid_from).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(billLimit.valid_to).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>${billLimit.amount.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setCurrentBillLimit(billLimit);
-                            setIsBillLimitDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteBillLimit(billLimit.id!)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Button onClick={() => setIsBillLimitDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Bill Limit
-              </Button>
+              {!hasActiveBillLimit && (
+                <Button onClick={() => setIsBillLimitDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Bill Limit
+                </Button>
+              )}
+              {billLimits && (
+                <BillLimitsTable
+                  billLimits={billLimits}
+                  onEdit={(billLimit) => {
+                    setCurrentBillLimit(billLimit);
+                    setIsBillLimitDialogOpen(true);
+                  }}
+                  onDelete={(billLimit) => {
+                    setCurrentBillLimit(billLimit);
+                    setIsDeleteBillLimitDialogOpen(true);
+                  }}
+                />
+              )}
             </>
           )}
         </div>
@@ -320,51 +325,24 @@ export const SettingsScreen: React.FC = () => {
           </div>
           {activeRealm.overhead_enabled && (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Valid From</TableHead>
-                    <TableHead>Valid To</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {overheads.map((overhead) => (
-                    <TableRow key={overhead.id}>
-                      <TableCell>
-                        {new Date(overhead.valid_from).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(overhead.valid_to).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>${overhead.percentage.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setCurrentOverhead(overhead);
-                            setIsOverheadDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteOverhead(overhead.id!)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Button onClick={() => setIsOverheadDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Overhead
-              </Button>
+              {!hasActiveOverhead && (
+                <Button onClick={() => setIsOverheadDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Overhead
+                </Button>
+              )}
+              {overhead && (
+                <OverheadsTable
+                  overhead={overhead}
+                  onEdit={(overhead) => {
+                    setCurrentOverhead(overhead);
+                    setIsOverheadDialogOpen(true);
+                  }}
+                  onDelete={(overhead) => {
+                    setCurrentOverhead(overhead);
+                    setIsDeleteOverheadDialogOpen(true);
+                  }}
+                />
+              )}
             </>
           )}
         </div>
@@ -428,6 +406,26 @@ export const SettingsScreen: React.FC = () => {
         submitting={submitting}
         onSubmit={handleOverheadSubmit}
       />
+
+      {currentBillLimit && (
+        <DeleteBillLimitDialog
+          billLimit={currentBillLimit}
+          onOpenChange={setIsDeleteBillLimitDialogOpen}
+          open={isDeleteBillLimitDialogOpen}
+          onConfirm={handleDeleteBillLimit}
+          submitting={submitting}
+        />
+      )}
+
+      {currentOverhead && (
+        <DeleteOverheadDialog
+          overhead={currentOverhead}
+          onOpenChange={setIsDeleteOverheadDialogOpen}
+          open={isDeleteOverheadDialogOpen}
+          onConfirm={handleDeleteOverhead}
+          submitting={submitting}
+        />
+      )}
     </div>
   );
 };

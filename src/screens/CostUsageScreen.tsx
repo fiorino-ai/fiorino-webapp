@@ -1,6 +1,5 @@
 import AdvancedUsageFilter from "@/components/custom/AdvancedUsageFilter";
 import MonthPicker from "@/components/custom/MonthPicker";
-import { Button } from "@/components/ui/button";
 import {
   CardHeader,
   CardTitle,
@@ -26,12 +25,14 @@ import { formatDailyCosts } from "@/lib/chart";
 import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
-import { UsageFilter } from "@/types";
+import { MonthRange, UsageFilter } from "@/types";
 import { LoaderCircle } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar } from "recharts";
 import { useShallow } from "zustand/react/shallow";
+import { isSameMonth } from "date-fns";
+import { format } from "date-fns";
 
 const realmDataSelector = (state: RealmDataState) => ({
   kpi: state.costKPI,
@@ -49,6 +50,38 @@ const realmDataSelector = (state: RealmDataState) => ({
 const realmsSelector = (state: RealmsState) => ({
   activeRealm: state.activeRealm,
 });
+
+const formatBillPeriod = (period: MonthRange) => {
+  if (isSameMonth(period.from, period.to)) {
+    // Single month format: "Oct 1 - 31"
+    return `${period.from.toLocaleString("en-US", {
+      month: "short",
+    })} ${period.from.getDate()} - ${period.to.getDate()}`;
+  } else {
+    // Multiple months format like MonthPicker
+    let fromFormat = "MMM";
+    let toFormat = "MMM";
+
+    if (period.from.getFullYear() !== new Date().getFullYear()) {
+      fromFormat = "MMM, yy";
+    }
+
+    if (period.from.getFullYear() !== period.to.getFullYear()) {
+      toFormat = "MMM, yy";
+    } else if (
+      period.from.getFullYear() === new Date().getFullYear() &&
+      period.from.getFullYear() === period.to.getFullYear()
+    ) {
+      fromFormat = "MMM";
+      toFormat = "MMM";
+    }
+
+    return `${format(period.from, fromFormat)} - ${format(
+      period.to,
+      toFormat
+    )}`;
+  }
+};
 
 export const CostUsageScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -219,24 +252,36 @@ export const CostUsageScreen: React.FC = () => {
             </div>
           </div>
           <div className="w-[30%] space-y-6">
-            {activeRealm?.bill_limit_enabled && (
-              <div>
-                <CardHeader>
-                  <CardTitle>Monthly Bill</CardTitle>
-                  <CardDescription>Oct 1 - 31</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold mb-2">
-                    ${kpi.total_cost}
-                  </div>
-                  <Progress value={2} className="h-2 mb-2" />
-                  <div className="text-sm text-gray-400 mb-4">
-                    ${kpi.total_cost} / $50.00 limit
-                  </div>
-                  <Button className="w-full">Increase limit</Button>
-                </CardContent>
-              </div>
-            )}
+            {activeRealm?.bill_limit_enabled &&
+              kpi.budget.current_budget > 0 && (
+                <div>
+                  <CardHeader>
+                    <CardTitle>
+                      {isSameMonth(period.from, period.to)
+                        ? "Monthly"
+                        : "Period"}{" "}
+                      Bill
+                    </CardTitle>
+                    <CardDescription>
+                      {formatBillPeriod(period)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold mb-2">
+                      ${kpi.total_cost}
+                    </div>
+                    <Progress
+                      value={kpi.budget.budget_usage_percentage}
+                      className="h-2 mb-2"
+                      max={100}
+                    />
+                    <div className="text-sm text-gray-400 mb-4">
+                      ${kpi.total_cost} / ${kpi.budget.current_budget} limit
+                    </div>
+                    {/* <Button className="w-full">Increase limit</Button> */}
+                  </CardContent>
+                </div>
+              )}
             {activeRealm?.overhead_enabled && (
               <div>
                 <CardHeader>
