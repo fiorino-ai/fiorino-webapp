@@ -71,6 +71,13 @@ export interface ChartCostData {
   };
 }
 
+export interface ChartTokensData {
+  [date: string]: {
+    total_input_tokens: number;
+    total_output_tokens: number;
+  };
+}
+
 export interface DailyTotalTokens {
   date: string;
   total_input_tokens: number;

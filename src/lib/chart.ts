@@ -1,8 +1,10 @@
 import {
   ChartCostData,
   ChartCostSerie,
+  ChartTokensData,
   DailyModelCost,
   DailyModelTotalCost,
+  DailyTotalTokens,
   MonthRange,
 } from "@/types";
 
@@ -106,4 +108,54 @@ export const formatSingleModelDailyCosts = (
   });
 
   return filledData;
+};
+
+export const formatDailyTokens = (
+  dailyTokens: DailyTotalTokens[],
+  period: MonthRange
+): DailyTotalTokens[] => {
+  // Initialize costs object with all dates in range
+  const tokens: ChartTokensData = {};
+  const dates = getDatesInRange(period.from, period.to);
+
+  // Get all unique model names from dailyCosts (if any)
+  const datesSet = new Set<string>();
+  if (dailyTokens) {
+    dailyTokens.forEach((tokens) => datesSet.add(tokens.date));
+  }
+
+  // Initialize all dates with 0 for each model (or just date if no models)
+  dates.forEach((date) => {
+    const dateStr = formatDate(date);
+
+    tokens[dateStr] = {
+      total_input_tokens: 0,
+      total_output_tokens: 0,
+    };
+  });
+
+  // Fill in actual costs if they exist
+  if (dailyTokens) {
+    for (const dailyUsage of dailyTokens) {
+      if (tokens[dailyUsage.date]) {
+        tokens[dailyUsage.date] = {
+          total_input_tokens: dailyUsage.total_input_tokens,
+          total_output_tokens: dailyUsage.total_output_tokens,
+        };
+      }
+    }
+  }
+
+  // Convert to series format
+  return Object.keys(tokens)
+    .sort() // Ensure dates are in order
+    .map((date) => ({
+      date,
+      ...tokens[date],
+    }));
+};
+
+export const formatDateTick = (date: string) => {
+  const dateObj = new Date(date);
+  return formatDate(dateObj, "MM-DD");
 };

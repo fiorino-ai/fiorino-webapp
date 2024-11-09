@@ -15,12 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDailyTokens, formatDateTick } from "@/lib/chart";
 import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import { UsageFilter } from "@/types";
 import { LoaderCircle } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { useShallow } from "zustand/react/shallow";
@@ -61,6 +62,12 @@ export const ActivityUsageScreen: React.FC = () => {
     kpiFilters,
     setKpiFilters,
   } = useRealmDataStore(useShallow(realmDataSelector));
+
+  const dailyTokens = useMemo(() => {
+    return formatDailyTokens(kpi?.daily_tokens || [], period);
+  }, [kpi, period]);
+
+  console.log(dailyTokens);
 
   useEffect(() => {
     if (activeRealm?.id) {
@@ -160,8 +167,8 @@ export const ActivityUsageScreen: React.FC = () => {
                 }}
                 className="min-h-[100px] w-full max-h-[300px]"
               >
-                <BarChart data={kpi.daily_tokens}>
-                  <XAxis dataKey="date" />
+                <BarChart data={dailyTokens}>
+                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar
@@ -194,8 +201,11 @@ export const ActivityUsageScreen: React.FC = () => {
                       }}
                     >
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={model.data}>
-                          <XAxis dataKey="date" />
+                        <BarChart data={formatDailyTokens(model.data, period)}>
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={formatDateTick}
+                          />
                           <YAxis />
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Bar

@@ -21,7 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDailyCosts, formatSingleModelDailyCosts } from "@/lib/chart";
+import {
+  formatDailyCosts,
+  formatDateTick,
+  formatSingleModelDailyCosts,
+} from "@/lib/chart";
 import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
@@ -204,7 +208,7 @@ export const CostUsageScreen: React.FC = () => {
                 className="min-h-[100px] w-full max-h-[300px]"
               >
                 <BarChart data={dailyCosts}>
-                  <XAxis dataKey="date" />
+                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   {kpi.llms.map((model, index) => (
@@ -240,7 +244,10 @@ export const CostUsageScreen: React.FC = () => {
                             period
                           )}
                         >
-                          <XAxis dataKey="date" />
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={formatDateTick}
+                          />
                           <YAxis yAxisId="left" orientation="left" />
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Bar
@@ -259,7 +266,7 @@ export const CostUsageScreen: React.FC = () => {
           <div className="w-[30%] space-y-6">
             {activeRealm?.bill_limit_enabled &&
               kpi.budget.current_budget > 0 && (
-                <div>
+                <div className="border border-gray-900 bg-gradient-to-br from-purple-950/5 via-purple-950/10 to-gray-950/30 rounded-3xl">
                   <CardHeader>
                     <CardTitle>
                       {isSameMonth(period.from, period.to)
@@ -288,7 +295,7 @@ export const CostUsageScreen: React.FC = () => {
                 </div>
               )}
             {activeRealm?.overhead_enabled && (
-              <div>
+              <div className="border border-gray-900 bg-gradient-to-br from-purple-950/5 via-purple-950/10 to-gray-950/30 rounded-3xl">
                 <CardHeader>
                   <CardTitle>Income from Usage Overhead</CardTitle>
                 </CardHeader>
