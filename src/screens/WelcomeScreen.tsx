@@ -40,8 +40,11 @@ export const WelcomeScreen: React.FC = () => {
         colors: ["#8b5cf6", "#6d28d9", "#4c1d95"],
       });
       setRealmCreated(newRealm);
-    } catch (error: Error | any) {
-      console.error("Failed to create realm:", error.message);
+    } catch (error) {
+      console.error(
+        "Failed to create realm:",
+        error instanceof Error ? error.message : String(error)
+      );
     }
   };
 
@@ -77,7 +80,7 @@ export const WelcomeScreen: React.FC = () => {
           </CardHeader>
           <CardContent>
             <AnimatePresence mode="wait">
-              {!Boolean(realmCreated) ? (
+              {!realmCreated ? (
                 <motion.div
                   key="create-realm"
                   initial={{ opacity: 0 }}

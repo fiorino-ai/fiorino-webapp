@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import { LLMCost } from "@/types";
-import { Plus } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { LLMCostsTable } from "@/components/custom/LLMCostsTable";
@@ -91,18 +91,15 @@ export const LLMCostsScreen: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <div>
+        <div className="w-full flex flex-row items-center gap-2">
           <h2 className="text-xl font-bold mb-2">LLM Pricing</h2>
+          {loading && <LoaderCircle className="animate-spin size-4" />}
         </div>
 
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => setIsDialogOpen(true)} disabled={loading}>
           <Plus /> Add new pricing
         </Button>
       </div>

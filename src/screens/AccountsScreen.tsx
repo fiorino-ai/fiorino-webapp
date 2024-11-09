@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
-import { ChartNoAxesColumn, ChartPie } from "lucide-react";
+import { ChartNoAxesColumn, ChartPie, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Input } from "@/components/ui/input";
@@ -80,7 +80,10 @@ export const AccountsScreen: React.FC = () => {
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold mb-2">Account Management</h2>
+        <div className="w-full flex flex-row items-center gap-2">
+          <h2 className="text-xl font-bold mb-2">Account Management</h2>
+          {loading && <LoaderCircle className="animate-spin size-4" />}
+        </div>
       </div>
       <div className="mb-4 flex justify-between items-center">
         <Input

@@ -14,7 +14,7 @@ import {
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import { ApiKey, NewApiKey, EditedApiKey } from "@/types";
-import { Check, Pencil, Plus, Trash, X } from "lucide-react";
+import { Check, LoaderCircle, Pencil, Plus, Trash, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
@@ -97,38 +97,15 @@ export const ApiKeysScreen: React.FC = () => {
     // await fetchApiKeys(activeRealm.id);
   };
 
-  console.log({ apiKeys });
-
-  // const initData = async () => {
-  //   const response = await fetch(
-  //     "http://localhost:8000/api/v1/kpi/activity?start_date=2024-09-01&end_date=2024-10-01"
-  //   );
-
-  //   if (!response.ok) {
-  //     throw new Error("Failed to fetch data");
-  //   }
-
-  //   const data = await response.json();
-  //   console.log(data);
-
-  //   setKpi(data);
-  // };
-
-  // useEffect(() => {
-  //   initData();
-  // }, [activeRealm]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <div>
+        <div className="w-full flex flex-row items-center gap-2">
           <h2 className="text-xl font-bold mb-2">API Keys</h2>
+          {loading && <LoaderCircle className="animate-spin size-4" />}
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
+
+        <Button onClick={() => setIsDialogOpen(true)} disabled={loading}>
           <Plus /> Create new secret key
         </Button>
       </div>

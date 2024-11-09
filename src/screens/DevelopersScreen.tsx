@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Copy,
-  Key,
-  ChevronDown,
-  ChevronRight,
-  LoaderCircle,
-} from "lucide-react";
+import { Copy, ChevronDown, ChevronRight, LoaderCircle } from "lucide-react";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
@@ -135,11 +129,18 @@ export const DevelopersScreen: React.FC = () => {
   return (
     <>
       <div className="flex flex-col w-full min-h-screen">
-        <div className="border-b">
+        <div className="flex justify-between items-center mb-6">
+          <div className="w-full flex flex-row items-center gap-2">
+            <h2 className="text-xl font-bold mb-2">Developers</h2>
+            {logsLoading && <LoaderCircle className="animate-spin size-4" />}
+          </div>
+        </div>
+
+        {/* <div className="border-b">
           <div className="container py-4">
             <h1 className="text-3xl font-bold mb-4">Developers</h1>
           </div>
-        </div>
+        </div> */}
 
         <div className="container py-6 space-y-6">
           <Card>

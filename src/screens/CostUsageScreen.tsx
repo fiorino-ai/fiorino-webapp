@@ -30,7 +30,7 @@ import { getFirstDayOfMonth, getLastDayOfMonth } from "@/lib/date";
 import { RealmDataState, useRealmDataStore } from "@/stores/RealmDataStore";
 import { RealmsState, useRealmsStore } from "@/stores/RealmStore";
 import { MonthRange, UsageFilter } from "@/types";
-import { LoaderCircle } from "lucide-react";
+import { LineChart, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar } from "recharts";
@@ -199,68 +199,96 @@ export const CostUsageScreen: React.FC = () => {
             <div>
               <h3>Cost Overview</h3>
 
-              <ChartContainer
-                config={{
-                  amount: {
-                    label: "Amount",
-                  },
-                }}
-                className="min-h-[100px] w-full max-h-[300px]"
-              >
-                <BarChart data={dailyCosts}>
-                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  {kpi.llms.map((model, index) => (
-                    <Bar
-                      key={index}
-                      dataKey={model.model_name}
-                      fill={`hsl(var(--chart-${index + 1}))`}
-                      stackId="daily-cost"
-                    />
-                  ))}
-                </BarChart>
-              </ChartContainer>
+              {dailyCosts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[300px] border border-dashed border-gray-800 rounded-2xl">
+                  <LineChart className="h-10 w-10 text-gray-500 mb-3" />
+                  <p className="text-gray-400 text-sm">
+                    No cost data available for this period
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Usage data will appear here once available
+                  </p>
+                </div>
+              ) : (
+                <ChartContainer
+                  config={{
+                    amount: {
+                      label: "Amount",
+                    },
+                  }}
+                  className="min-h-[100px] w-full max-h-[300px]"
+                >
+                  <BarChart data={dailyCosts}>
+                    <XAxis dataKey="date" tickFormatter={formatDateTick} />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    {kpi.llms.map((model, index) => (
+                      <Bar
+                        key={index}
+                        dataKey={model.model_name}
+                        fill={`hsl(var(--chart-${index + 1}))`}
+                        stackId="daily-cost"
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              )}
             </div>
             <div>
               <h3>Model Cost</h3>
-              <div className="grid grid-cols-2 gap-6">
-                {kpi.model_costs.map((model, index) => (
-                  <div key={index}>
-                    <h3 className="text-lg font-semibold mb-4">
-                      {model.model_name}
-                    </h3>
-                    <ChartContainer
-                      config={{
-                        tokens: {
-                          label: model.model_name,
-                        },
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={formatSingleModelDailyCosts(
-                            model.daily_costs,
-                            period
-                          )}
+              {kpi.model_costs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[200px] border border-dashed border-gray-800 rounded-2xl">
+                  <LineChart className="h-8 w-8 text-gray-500 mb-2" />
+                  <p className="text-gray-400 text-sm">No model usage data</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-6">
+                  {kpi.model_costs.map((model, index) => (
+                    <div key={index}>
+                      <h3 className="text-lg font-semibold mb-4">
+                        {model.model_name}
+                      </h3>
+                      {model.daily_costs.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[200px] border border-dashed border-gray-800 rounded-2xl">
+                          <LineChart className="h-8 w-8 text-gray-500 mb-2" />
+                          <p className="text-gray-400 text-sm">
+                            No model usage data
+                          </p>
+                        </div>
+                      ) : (
+                        <ChartContainer
+                          config={{
+                            tokens: {
+                              label: model.model_name,
+                            },
+                          }}
                         >
-                          <XAxis
-                            dataKey="date"
-                            tickFormatter={formatDateTick}
-                          />
-                          <YAxis yAxisId="left" orientation="left" />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar
-                            yAxisId="left"
-                            dataKey="cost"
-                            fill={`hsl(var(--chart-1))`}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </div>
-                ))}
-              </div>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={formatSingleModelDailyCosts(
+                                model.daily_costs,
+                                period
+                              )}
+                            >
+                              <XAxis
+                                dataKey="date"
+                                tickFormatter={formatDateTick}
+                              />
+                              <YAxis yAxisId="left" orientation="left" />
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                              <Bar
+                                yAxisId="left"
+                                dataKey="cost"
+                                fill={`hsl(var(--chart-1))`}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="w-[30%] space-y-6">
@@ -314,28 +342,40 @@ export const CostUsageScreen: React.FC = () => {
                 <CardTitle>Most Used Models</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Model</TableHead>
-                      <TableHead>Tokens</TableHead>
-                      <TableHead>Cost</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(kpi.most_used_models || []).map((usage, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{usage.model_name}</TableCell>
-                        <TableCell>
-                          {usage.total_tokens.toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          ${usage.total_model_price.toFixed(2)}
-                        </TableCell>
+                {(kpi.most_used_models || []).length == 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[200px] border border-dashed border-gray-800 rounded-2xl">
+                    <LineChart className="h-8 w-8 text-gray-500 mb-2" />
+                    <p className="text-gray-400 text-sm">
+                      No usage data available
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Model usage statistics will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Model</TableHead>
+                        <TableHead>Tokens</TableHead>
+                        <TableHead>Cost</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {(kpi.most_used_models || []).map((usage, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{usage.model_name}</TableCell>
+                          <TableCell>
+                            {usage.total_tokens.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            ${usage.total_model_price.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </div>
           </div>

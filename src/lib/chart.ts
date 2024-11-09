@@ -43,6 +43,10 @@ export const formatDailyCosts = (
   dailyCosts: DailyModelTotalCost[],
   period: MonthRange
 ): ChartCostSerie[] => {
+  if (dailyCosts.length === 0) {
+    return [];
+  }
+
   // Initialize costs object with all dates in range
   const costs: ChartCostData = {};
   const dates = getDatesInRange(period.from, period.to);
@@ -114,6 +118,10 @@ export const formatDailyTokens = (
   dailyTokens: DailyTotalTokens[],
   period: MonthRange
 ): DailyTotalTokens[] => {
+  if (dailyTokens.length === 0) {
+    return [];
+  }
+
   // Initialize costs object with all dates in range
   const tokens: ChartTokensData = {};
   const dates = getDatesInRange(period.from, period.to);
