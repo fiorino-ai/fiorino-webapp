@@ -52,12 +52,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               />
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center">
+              {/* <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
                 <a href="#" className="ml-auto inline-block text-sm underline">
                   Forgot your password?
                 </a>
-              </div>
+              </div> */}
               <Input
                 id="password"
                 type="password"
@@ -72,12 +72,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             </Button>
           </div>
         </form>
-        <div className="mt-4 text-center text-sm">
+        {/* <div className="mt-4 text-center text-sm">
           Don&apos;t have an account?{" "}
           <a href="#" className="underline">
             Sign up
           </a>
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );

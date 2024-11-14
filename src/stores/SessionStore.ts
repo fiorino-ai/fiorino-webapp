@@ -42,8 +42,9 @@ export const useAuthStore = create<SessionState>((set) => ({
     set({ signupLoading: true, error: null });
     try {
       // Simulate API call
-      const user = await fakeApiSignup(email, password);
-      set({ user });
+      console.log("signup", email, password);
+      // const user = await fakeApiSignup(email, password);
+      // set({ user });
     } catch (error) {
       set({ error: "Signup failed. Please try again." });
       console.error("Signup failed", error);
@@ -76,10 +77,10 @@ export const useAuthStore = create<SessionState>((set) => ({
   },
 }));
 
-const fakeApiSignup = (email: string, password: string): Promise<User> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ id: "2", email });
-    }, 1000);
-  });
-};
+// const fakeApiSignup = (email: string, password: string): Promise<User> => {
+//   return new Promise((resolve) => {
+//     setTimeout(() => {
+//       resolve({ id: "2", email });
+//     }, 1000);
+//   });
+// };

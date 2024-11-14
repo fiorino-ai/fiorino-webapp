@@ -72,7 +72,7 @@ export default function LLMCostForm({
     "openai",
     "anthropic",
   ]);
-  const [modelOptions, setModelOptions] = useState({
+  const [modelOptions, setModelOptions] = useState<Record<string, string[]>>({
     openai: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
     anthropic: ["claude-3-sonnet-latest", "claude-3-opus-latest"],
     "": [],
@@ -259,7 +259,7 @@ export default function LLMCostForm({
                       </Button>
                     </CommandEmpty>
                     <CommandGroup key={searchModel}>
-                      {(modelOptions[formData.provider_name] || []).map(
+                      {(modelOptions[String(formData.provider_name)] || []).map(
                         (option) => (
                           <CommandItem
                             key={option}

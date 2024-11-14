@@ -39,7 +39,7 @@ type Props = {
   accounts: Account[];
   models?: LLM[];
   onSearchAccountsChange: (search: string) => Promise<void>;
-  onSearchModelsChange?: (search: string) => Promise<void>;
+  // onSearchModelsChange?: (search: string) => Promise<void>;
   onChange?: (filters: UsageFilter[]) => void;
   filters?: UsageFilter[];
 };
@@ -50,7 +50,7 @@ export default function AdvancedUsageFilter({
   accounts = [],
   models = [],
   onSearchAccountsChange,
-  onSearchModelsChange,
+  // onSearchModelsChange,
   onChange,
   filters = [],
 }: Props) {
