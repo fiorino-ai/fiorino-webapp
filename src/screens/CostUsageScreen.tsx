@@ -87,6 +87,16 @@ const formatBillPeriod = (period: MonthRange) => {
   }
 };
 
+// Add this helper function for currency formatting
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
 export const CostUsageScreen: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -308,7 +318,7 @@ export const CostUsageScreen: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold mb-2">
-                      ${kpi.total_cost}
+                      {formatCurrency(kpi.total_cost)}
                     </div>
                     <Progress
                       value={kpi.budget.budget_usage_percentage}
@@ -316,7 +326,8 @@ export const CostUsageScreen: React.FC = () => {
                       max={100}
                     />
                     <div className="text-sm text-gray-400 mb-4">
-                      ${kpi.total_cost} / ${kpi.budget.current_budget} limit
+                      {formatCurrency(kpi.total_cost)} /{" "}
+                      {formatCurrency(kpi.budget.current_budget)} limit
                     </div>
                     {/* <Button className="w-full">Increase limit</Button> */}
                   </CardContent>
@@ -329,7 +340,7 @@ export const CostUsageScreen: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold mb-2">
-                    ${kpi.total_usage_fees}
+                    {formatCurrency(kpi.total_usage_fees)}
                   </div>
                   <div className="text-sm text-gray-400">
                     Total income from usage fees

@@ -64,7 +64,7 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
         </TableCell>
         <TableCell>{formatOverhead(data.overhead)}</TableCell>
         <TableCell>{formatDate(data.valid_from)}</TableCell>
-        <TableCell>{formatDate(data.valid_to)}</TableCell>
+        <TableCell>{data.valid_to ? formatDate(data.valid_to) : ""}</TableCell>
         <TableCell>
           <div className="flex space-x-2">
             <Button variant="ghost" size="sm" onClick={() => onEdit(data)}>
@@ -105,7 +105,11 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
                       {formatOverhead(historyItem.overhead)}
                     </TableCell>
                     <TableCell>{formatDate(historyItem.valid_from)}</TableCell>
-                    <TableCell>{formatDate(historyItem.valid_to)}</TableCell>
+                    <TableCell>
+                      {historyItem.valid_to
+                        ? formatDate(historyItem.valid_to)
+                        : ""}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

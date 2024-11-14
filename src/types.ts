@@ -202,7 +202,7 @@ export interface LLMCostHistory {
   unit_type: string;
   overhead: number;
   valid_from: Date;
-  valid_to: Date;
+  valid_to: Date | null;
 }
 
 export interface LLMCost {
@@ -213,7 +213,7 @@ export interface LLMCost {
   unit_type: string;
   overhead: number;
   valid_from: Date;
-  valid_to: Date;
+  valid_to: Date | null;
   cost_id: string;
   history: LLMCostHistory[];
 }

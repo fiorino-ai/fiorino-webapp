@@ -520,11 +520,13 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       const formattedCosts = response.data.map((cost) => ({
         ...cost,
         valid_from: new Date(cost.valid_from),
-        valid_to: new Date(cost.valid_to),
+        valid_to: cost.valid_to ? new Date(cost.valid_to) : null,
         history: cost.history.map((historyItem) => ({
           ...historyItem,
           valid_from: new Date(historyItem.valid_from),
-          valid_to: new Date(historyItem.valid_to),
+          valid_to: historyItem.valid_to
+            ? new Date(historyItem.valid_to)
+            : null,
         })),
       }));
 
@@ -553,11 +555,13 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       const newCost = {
         ...response.data,
         valid_from: new Date(response.data.valid_from),
-        valid_to: new Date(response.data.valid_to),
+        valid_to: response.data.valid_to
+          ? new Date(response.data.valid_to)
+          : null,
         history: response.data.history.map((item) => ({
           ...item,
           valid_from: new Date(item.valid_from),
-          valid_to: new Date(item.valid_to),
+          valid_to: item.valid_to ? new Date(item.valid_to) : null,
         })),
       };
 
@@ -592,11 +596,13 @@ export const useRealmDataStore = create<RealmDataState>((set, get) => ({
       const updatedCost = {
         ...response.data,
         valid_from: new Date(response.data.valid_from),
-        valid_to: new Date(response.data.valid_to),
+        valid_to: response.data.valid_to
+          ? new Date(response.data.valid_to)
+          : null,
         history: response.data.history.map((item) => ({
           ...item,
           valid_from: new Date(item.valid_from),
-          valid_to: new Date(item.valid_to),
+          valid_to: item.valid_to ? new Date(item.valid_to) : null,
         })),
       };
 
