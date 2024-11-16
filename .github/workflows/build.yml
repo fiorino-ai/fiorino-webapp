@@ -1,0 +1,58 @@
+name: Release Main Zip
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - ".gitignore"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  build:
+    timeout-minutes: 120
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: "npm"
+      - name: Install dependencies
+        run: npm install
+      - name: "TODO to Issue"
+        uses: alstr/todo-to-issue-action@v4
+        with:
+          IDENTIFIERS: '[{"name": "FEATURE", "labels": ["enhancement"]}, {"name": "BUG", "labels": ["bug"]}]'
+          ISSUE_TEMPLATE: '**Describe the reason of this issue**\n{{ body }}\n\nThe issue is present here:\n\n{{ snippet }}'
+      - name: Build
+        run: npm run build
+      - name: Zip Release
+        uses: TheDoctor0/zip-release@0.7.6
+        with:
+          type: "zip"
+          filename: "release.zip"
+          directory: "./dist"
+          path: "."
+      - name: Upload Release
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          tag: "Admin"
+          artifacts: "./dist/release.zip"
+          allowUpdates: true
+          replacesArtifacts: true
+          body: |
+            ${{ github.event.head_commit.message }}
+          token: ${{ secrets.GITHUB_TOKEN }}
