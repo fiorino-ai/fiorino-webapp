@@ -3,6 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { SessionState, useAuthStore } from "@/stores/SessionStore";
 import Loading from "./Loading";
 import { useShallow } from "zustand/react/shallow";
+import SETTINGS from "@/config/config";
 
 const sessionSelector = (state: SessionState) => ({
   user: state.user,
@@ -17,7 +18,7 @@ const ProtectedRoute: React.FC = () => {
   }
 
   if (!user) {
-    return <Navigate to="/auth/login" />;
+    return <Navigate to={`${SETTINGS.BASE_URL}auth/login`} />;
   }
 
   return <Outlet />;
