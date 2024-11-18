@@ -2,7 +2,6 @@ import { Navigate, Outlet } from "react-router-dom";
 import { SessionState, useAuthStore } from "@/stores/SessionStore";
 import Loading from "@/components/custom/Loading";
 import { useShallow } from "zustand/react/shallow";
-import SETTINGS from "@/config/config";
 
 const sessionSelector = (state: SessionState) => ({
   user: state.user,
@@ -17,7 +16,7 @@ const AuthRoute: React.FC = () => {
   }
 
   if (user) {
-    return <Navigate to={`${SETTINGS.BASE_URL}/realms`} />;
+    return <Navigate to="/realms" />;
   }
 
   return <Outlet />;

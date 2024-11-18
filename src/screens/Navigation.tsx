@@ -15,14 +15,13 @@ import { useShallow } from "zustand/react/shallow";
 import { AccountsScreen } from "./AccountsScreen";
 import { LLMCostsScreen } from "./LLMCostsScreen";
 import { DevelopersScreen } from "./DevelopersScreen";
-import SETTINGS from "@/config/config";
 
 const RedirectToMainPage: React.FC = () => {
-  return <Navigate to={`${SETTINGS.BASE_URL}realms/usage`} />;
+  return <Navigate to={`/realms/usage`} />;
 };
 
 const RedirectToLoginPage: React.FC = () => {
-  return <Navigate to={`${SETTINGS.BASE_URL}auth/login`} />;
+  return <Navigate to={`/auth/login`} />;
 };
 
 const sessionSelector = (state: SessionState) => ({
@@ -64,10 +63,8 @@ export const Navigation: React.FC = () => {
             <Route path="llm-costs" element={<LLMCostsScreen />} />
           </Route>
         </Route>
-        <Route
-          path="*"
-          element={<Navigate to={`${SETTINGS.BASE_URL}auth/login`} />}
-        />
+        {/* <Route path="*" element={<Navigate to="/realms" />} /> */}
+        <Route path="*" element={<Navigate to="/auth/login" />} />
       </Routes>
     </div>
   );
