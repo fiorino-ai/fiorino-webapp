@@ -48,7 +48,10 @@ export const useRealmsStore = create<RealmsState>((set, get) => ({
     set({ submitting: true, error: null });
     try {
       const response = await axiosIstance.post<Realm>("/realms", realm);
-      newRealm = response.data;
+      newRealm = {
+        ...response.data,
+        created_at: new Date(response.data.created_at),
+      };
       set({ realms: [response.data, ...get().realms] });
     } catch (error) {
       set({ error: "Failed to create realm. Please try again." });
