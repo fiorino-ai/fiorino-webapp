@@ -115,10 +115,15 @@ export const DevelopersScreen: React.FC = () => {
     });
   };
 
-  const curlExample = `curl -X POST https://api.yourdomain.com/api/v1/usage/track \\
+  const curlExample = `curl -X POST "http://<YOUR_DOMAIN>/api/v1/usage/track" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -H "X-API-Key: your_api_key_here" \\
-  -d '{"metric": "example_metric", "value": 1}'`;
+  -d '{
+    "provider_name": "openai",
+    "llm_model_name": "gpt-4",
+    "message": "Your message text here",
+    "external_id": "user123"
+  }'`;
 
   const loadMore = async () => {
     if (logsHasMore) {
